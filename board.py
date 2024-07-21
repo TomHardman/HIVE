@@ -66,11 +66,49 @@ class HiveBoard():
         self.name_obj_mapping[hand[-1].name] = hand[-1]
 
     
-    def valid_placement(self, tile, position, player):
+    def valid_placement(self, pos, player):
         '''Returns True if the tile can be placed at the given position, False otherwise.'''
-        if position in self.tile_positions:
-            return False
-        return True
+        valid = True
+        connected = False
+        npos_arr = [(pos[0], pos[1]+1), (pos[0]+1, pos[1]), (pos[0]+1, pos[1]-1), 
+                    (pos[0], pos[1]-1), (pos[0]-1, pos[1]), (pos[0]-1, pos[1]+1)]
+        
+        for npos in npos_arr:
+            if self.get_tile(npos):
+                connected = True
+
+            if self.get_tile(npos) and self.get_tile(npos).player != player:
+                valid = False
+                break
+                    
+        return connected and valid
+    
+        
+    def get_valid_placements(self, player):
+        '''Returns list of all valid placement positions for a given player'''
+        valid_placements = set()
+        seen = set()
+
+        for pos in self.tile_positions:
+            npos_arr = [(pos[0], pos[1]+1), (pos[0]+1, pos[1]), (pos[0]+1, pos[1]-1), 
+                        (pos[0], pos[1]-1), (pos[0]-1, pos[1]), (pos[0]-1, pos[1]+1)]
+            for npos in npos_arr:
+                if self.get_tile(npos) == None and npos not in seen:
+                    valid = True
+                    seen.add(npos)
+                    nnpos_arr = [(npos[0], npos[1]+1), (npos[0]+1, npos[1]), (npos[0]+1, npos[1]-1), 
+                                 (npos[0], npos[1]-1), (npos[0]-1, npos[1]), (npos[0]-1, npos[1]+1)]
+                    
+                    for nnpos in nnpos_arr:
+                        if self.get_tile(nnpos) and self.get_tile(nnpos).player != player:
+                            valid = False
+                            break
+                    
+                    if valid:
+                        valid_placements.add(npos)
+        
+        return valid_placements
+                    
     
     def valid_move(self, tile, new_position, player):
         '''Returns True if the tile can be moved to the given position, False otherwise.'''
@@ -79,7 +117,7 @@ class HiveBoard():
         return True
     
     def execute_move_cli(self, tile_name, move_type, player, new_position=None):
-        '''Executes a move for the given player.'''
+        '''Executes a move for the given player (when using command line interface)'''
         tile = self.name_obj_mapping[tile_name]
         turns = self.player_turns[player-1]
         queen_placed = self.queens_placed[player-1]
@@ -128,5 +166,3 @@ class HiveBoard():
         for i, npos in enumerate(neighbouring_positions):
             ntile = self.get_tile(npos)
             tile.neighbours[i] = ntile
-
-            

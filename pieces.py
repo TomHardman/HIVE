@@ -15,6 +15,9 @@ class HiveTile(): # interface for all pieces
 class Ant(HiveTile):
     def __init__(self, player, n):
         super().__init__('ant', player, n)
+    
+    def valid_move(self):
+        pass
 
 class Beetle(HiveTile):
     def __init__(self, player, n):
