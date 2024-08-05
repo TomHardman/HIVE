@@ -1,15 +1,12 @@
 from board import HiveBoard
 
 def turn_cl(board, player):
-    turn = input(f'Player {player} Turn:') # input turn in format tile_name, move_type, new_position
-    if len(turn.split(' ')) == 2:
-        tile_name, move_type = turn.split(' ')
-
-    elif len(turn.split(' ')) == 3:
-        tile_name, move_type, new_position = turn.split(' ')
+    turn = input(f'Player {player} Turn: ') # input turn in format tile_name, move_type, new_position
+    tile_name, move_type, new_position = turn.split(' ')
+    new_position = tuple(map(int, new_position.split(',')))
     
     while board.execute_move_cli(tile_name, move_type, player, new_position) == False:
-        turn = input(f'Player {player} Turn:') # input turn in format tile_name, move_type, n1,n2
+        turn = input(f'Player {player} Turn: ') # input turn in format tile_name, move_type, n1,n2
         tile_name, move_type, new_position = turn.split(' ')
         new_position = tuple(map(int, new_position.split(',')))
 
@@ -23,7 +20,7 @@ def game_loop(board):
 
 
 def main():
-    print('starting game')
+    print('Starting Game')
     board = HiveBoard()
     game_loop(board)
 

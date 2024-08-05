@@ -17,21 +17,21 @@ class HiveTile(): # parent class for all pieces
 
 
 class Ant(HiveTile):
-    def __init__(self, player, n):
-        super().__init__('ant', player, n)
+    def __init__(self, player, n, board):
+        super().__init__('ant', player, n, board)
     
     def get_valid_moves(self):
         pass
 
 
 class Beetle(HiveTile):
-    def __init__(self, player, n):
-        super().__init__('beetle', player, n, beetle=True)
+    def __init__(self, player, n, board):
+        super().__init__('beetle', player, n, board, beetle=True)
 
 
 class Grasshopper(HiveTile):
-    def __init__(self, player, n):
-        super().__init__('grasshopper', player, n)
+    def __init__(self, player, n, board):
+        super().__init__('grasshopper', player, n, board)
     
 
     def get_valid_moves(self):
@@ -39,40 +39,43 @@ class Grasshopper(HiveTile):
         valid_moves = set()
 
         original_pos = self.position
-        first_iter = True
+        npos_arr = [(original_pos[0], original_pos[1]+1), (original_pos[0]+1, original_pos[1]), 
+                    (original_pos[0]+1, original_pos[1]-1), (original_pos[0], original_pos[1]-1), 
+                    (original_pos[0]-1, original_pos[1]), (original_pos[0]-1, original_pos[1]+1)]
 
-        bfs_queue = deque(self)
-        seen = set([original_pos])
+        bfs_queue = deque()
+        
+        for pos in npos_arr:
+            if self.board.get_tile(pos) != None:
+                bfs_queue.append(pos) # add all neighbouring tiles to the queue
         
         while bfs_queue:
-            tile = bfs_queue.popleft()
-            pos = tile.position
+            pos = bfs_queue.popleft()
+            diff_1 = pos[0] - original_pos[0]
+            diff_2 = pos[1] - original_pos[1]
 
-            if first_iter:
-                npos_arr = [(pos[0], pos[1]+1), (pos[0]+1, pos[1]), (pos[0]+1, pos[1]-1), 
-                    (pos[0], pos[1]-1), (pos[0]-1, pos[1]), (pos[0]-1, pos[1]+1)]
-                first_iter = False
-            
+            if diff_1 != 0:
+                delta_1 = diff_1 // abs(diff_1)
             else:
-                # logic to make sure position lies on a straight line from the grasshopper
-                delta_1 = min(pos[0] - original_pos[0], abs(pos[0] - original_pos[0])) / abs(pos[0] - original_pos[0])
-                delta_2 = min(pos[1] - original_pos[1], abs(pos[1] - original_pos[1])) / abs(pos[1] - original_pos[1])
-                npos_arr = [(pos[0] + delta_1, pos[1] + delta_2)]
+                delta_1 = 0
+            
+            if diff_2 != 0:
+                delta_2 = diff_2 // abs(diff_2)
+            else:
+                delta_2 = 0
+            
+            npos_arr = [(pos[0] + delta_1, pos[1] + delta_2)] # can only travel out in a straight line
             
             for pos in npos_arr:
-                if pos not in seen:
-                    seen.add(pos)
-                    
-                    if self.get_tile(pos) == None:
-                        valid_moves_temp.add(pos)
-                    
-                    else:
-                        bfs_queue.append(self.get_tile(pos))
+                if self.board.get_tile(pos) == None:
+                    valid_moves_temp.add(pos) 
+                else:
+                    bfs_queue.append(pos)
 
         # check if the move is valid by checking if the hive is still connected
         for move in valid_moves_temp:
             self.board.move_tile(self, move)
-            if self.board.connected():
+            if not self.board.check_unconnected():
                 valid_moves.add(move)
             self.board.move_tile(self, original_pos)
         
@@ -81,12 +84,12 @@ class Grasshopper(HiveTile):
 
         
 class Spider(HiveTile):
-    def __init__(self, player, n):
-        super().__init__('spider', player, n)
+    def __init__(self, player, n, board):
+        super().__init__('spider', player, n, board)
 
 
 class Queen(HiveTile):
-    def __init__(self, player, n):
-        super().__init__('queen', player, n)
+    def __init__(self, player, n, board):
+        super().__init__('queen', player, n, board)
 
         

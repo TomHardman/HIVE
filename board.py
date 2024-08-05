@@ -4,7 +4,7 @@ from pieces import Ant, Beetle, Grasshopper, Spider, Queen
 
 class HiveBoard():
     def __init__(self) -> None:
-        self.tile_positions  = defaultdict(set) # mapping from board position to tile objects
+        self.tile_positions  = defaultdict(list) # mapping from board position to tile objects
         self.name_obj_mapping = {} # mapping from tile name to object
         
         # create and fill hands for both players and fill name obj mapping
@@ -28,7 +28,7 @@ class HiveBoard():
             return self.tile_positions[position]
 
     def place_tile(self, tile, position):
-        self.tile_positions[position].add(tile)
+        self.tile_positions[position].append(tile)
         tile.position = position
         self.update_edges(tile)
         
@@ -44,30 +44,36 @@ class HiveBoard():
 
     def move_tile(self, tile, new_position):
         # remove tile from old position
-        self.tile_positions[tile.position].discard(tile)
+        self.tile_positions[tile.position].remove(tile)
         if len(self.tile_positions[tile.position]) == 0:
             del self.tile_positions[tile.position]
         
         # add tile to new position
-        self.tile_positions[new_position].add(tile)
+        self.tile_positions[new_position].append(tile)
         tile.position = new_position
         self.update_edges(tile)
     
     def fill_hand(self, hand, player):
         '''Fills the hand of the given player with three ants,
         three grasshoppers, two beetles, two spiders, and one queen.'''
+        
         for i in range(3):
-            hand.add(Ant(player, i+1, board=self))
-            self.name_obj_mapping[hand[-1].name] = hand[-1]
-            hand.add(Grasshopper(player, i+1, board=self))
-            self.name_obj_mapping[hand[-1].name] = hand[-1]
+            ant = Ant(player, i+1, self)
+            hand.add(ant)
+            self.name_obj_mapping[ant.name] = ant
+            grasshopper = Grasshopper(player, i+1, self)
+            hand.add(grasshopper)
+            self.name_obj_mapping[grasshopper.name] = grasshopper
         for i in range(2):
-            hand.add(Beetle(player, i+1, board=self))
-            self.name_obj_mapping[hand[-1].name] = hand[-1]
-            hand.add(Spider(player, i+1, board=self))
-            self.name_obj_mapping[hand[-1].name] = hand[-1]
-        hand.add(Queen(player, 1, board=self))
-        self.name_obj_mapping[hand[-1].name] = hand[-1]
+            beetle = Beetle(player, i+1, self)
+            hand.add(beetle)
+            self.name_obj_mapping[beetle.name] = beetle
+            spider = Spider(player, i+1, self)
+            hand.add(spider)
+            self.name_obj_mapping[spider.name] = spider
+        queen = Queen(player, 1, self)
+        hand.add(queen)
+        self.name_obj_mapping[queen.name] = queen
 
     def valid_placement(self, pos, player):
         '''Returns True if the tile can be placed at the given position, False otherwise.'''
@@ -76,12 +82,12 @@ class HiveBoard():
         npos_arr = [(pos[0], pos[1]+1), (pos[0]+1, pos[1]), (pos[0]+1, pos[1]-1), # neighbouring positions
                     (pos[0], pos[1]-1), (pos[0]-1, pos[1]), (pos[0]-1, pos[1]+1)]
         
-        if all(self.player_turns == 0): # first turn can be anywhere
+        if not any(self.player_turns): # first turn can be anywhere
             return True
         
         elif self.player_turns[player - 1] == 0: # first turn for second player must be adjacent to first player's tile
             for npos in npos_arr:
-                if self.get_tile(npos) and self.get_tile(npos).player != player:
+                if self.get_tile(npos) and self.get_tile(npos)[-1].player != player:
                     return True
             return False
         
@@ -89,7 +95,7 @@ class HiveBoard():
             if self.get_tile(npos):
                 connected = True
 
-                if self.get_tile(npos).player != player: # check for neighbouring opposing player tiles
+                if self.get_tile(npos)[-1].player != player: # check for neighbouring opposing player tiles
                     valid = False
                     break
                     
@@ -111,7 +117,7 @@ class HiveBoard():
                                  (npos[0], npos[1]-1), (npos[0]-1, npos[1]), (npos[0]-1, npos[1]+1)]
                     
                     for nnpos in nnpos_arr:
-                        if self.get_tile(nnpos) and self.get_tile(nnpos).player != player:
+                        if self.get_tile(nnpos) and self.get_tile(nnpos)[-1].player != player:
                             valid = False
                             break
                     
@@ -124,7 +130,7 @@ class HiveBoard():
         '''Returns True if the board is in an unconnected state, False otherwise.
         Performs a depth-first search to check if all tiles are connected.'''
         seen = set()
-        stack = list(self.tile_positions.keys())[0] # start search from a single tile
+        stack = [list(self.tile_positions.keys())[0]] # start search from a single position
         connected = False
         
         while stack:
@@ -144,12 +150,17 @@ class HiveBoard():
                    
     def valid_move(self, tile, new_position, player):
         '''Returns True if the tile can be moved to the given position, False otherwise.'''
-        if new_position in self.tile_positions:
-            return False
-        return True
+        if new_position in tile.get_valid_moves():
+            return True
+        return False
     
     def execute_move_cli(self, tile_name, move_type, player, new_position=None):
         '''Executes a move for the given player (when using command line interface)'''
+        
+        if tile_name not in self.name_obj_mapping:
+            print('Invalid tile name')
+            return False
+
         tile = self.name_obj_mapping[tile_name]
         turns = self.player_turns[player-1]
         queen_placed = self.queens_placed[player-1]
@@ -158,7 +169,7 @@ class HiveBoard():
             if move_type != 'place':
                 print('Cannot move before placing queen')
                 return False
-            if tile.name != 'queen' and turns == 2:
+            if 'queen' not in tile.name and turns == 2:
                 print('Must place queen within first 3 turns') 
                 return False
         
@@ -172,7 +183,7 @@ class HiveBoard():
             elif tile not in self.player2_hand and player == 2:
                 print('Tile not in hand')
                 return False
-            elif self.valid_placement(tile, new_position, player):
+            elif self.valid_placement(new_position, player):
                 self.place_tile(tile, new_position)
             else:
                 print('Invalid placement')
@@ -202,7 +213,8 @@ class HiveBoard():
             ntile = self.get_tile(npos)
             tile.neighbours[i] = ntile
             if ntile: # update neighbour's edges
-                ntile.neighbours[(i+3)%6] = tile
+                for tile_n in ntile: # if multiple tiles at neighbouring position (stacked)
+                    tile_n.neighbours[(i+3)%6] = tile
     
     def game_over(self):
         '''Checks if the game is over (queen surrounded) and returns the player
