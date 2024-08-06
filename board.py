@@ -20,7 +20,7 @@ class HiveBoard():
         self.queens_placed = [False, False]
         self.queen_positions = [None, None]
 
-    def get_tile(self, position):
+    def get_tile_stack(self, position):
         '''Returns the tiles at the given position, or None if there is no tile there.'''
         if position not in self.tile_positions:
             return None
@@ -43,8 +43,6 @@ class HiveBoard():
             self.queen_positions[tile.player-1] = position
 
     def move_tile(self, tile, new_position):
-        old_pos = tile.position
-
         # remove tile from old position
         self.tile_positions[tile.position].remove(tile)
         if len(self.tile_positions[tile.position]) == 0:
@@ -53,7 +51,7 @@ class HiveBoard():
         # add tile to new position
         self.tile_positions[new_position].append(tile)
         tile.position = new_position
-        self.update_edges(tile, old_Pos)
+        self.update_edges(tile)
     
     def fill_hand(self, hand, player):
         '''Fills the hand of the given player with three ants,
@@ -89,15 +87,15 @@ class HiveBoard():
         
         elif self.player_turns[player - 1] == 0: # first turn for second player must be adjacent to first player's tile
             for npos in npos_arr:
-                if self.get_tile(npos) and self.get_tile(npos)[-1].player != player:
+                if self.get_tile_stack(npos) and self.get_tile_stack(npos)[-1].player != player:
                     return True
             return False
         
         for npos in npos_arr:
-            if self.get_tile(npos):
+            if self.get_tile_stack(npos):
                 connected = True
 
-                if self.get_tile(npos)[-1].player != player: # check for neighbouring opposing player tiles
+                if self.get_tile_stack(npos)[-1].player != player: # check for neighbouring opposing player tiles
                     valid = False
                     break
                     
@@ -112,14 +110,14 @@ class HiveBoard():
             npos_arr = [(pos[0], pos[1]+1), (pos[0]+1, pos[1]), (pos[0]+1, pos[1]-1), 
                         (pos[0], pos[1]-1), (pos[0]-1, pos[1]), (pos[0]-1, pos[1]+1)]
             for npos in npos_arr:
-                if self.get_tile(npos) == None and npos not in seen:
+                if self.get_tile_stack(npos) == None and npos not in seen:
                     valid = True
                     seen.add(npos)
                     nnpos_arr = [(npos[0], npos[1]+1), (npos[0]+1, npos[1]), (npos[0]+1, npos[1]-1), 
                                  (npos[0], npos[1]-1), (npos[0]-1, npos[1]), (npos[0]-1, npos[1]+1)]
                     
                     for nnpos in nnpos_arr:
-                        if self.get_tile(nnpos) and self.get_tile(nnpos)[-1].player != player:
+                        if self.get_tile_stack(nnpos) and self.get_tile_stack(nnpos)[-1].player != player:
                             valid = False
                             break
                     
@@ -142,7 +140,7 @@ class HiveBoard():
                         (pos[0], pos[1]-1), (pos[0]-1, pos[1]), (pos[0]-1, pos[1]+1)]
             
             for npos in npos_arr:
-                if self.get_tile(npos) and npos not in seen: # if tiles exists at npos and hasn't been visited
+                if self.get_tile_stack(npos) and npos not in seen: # if tiles exists at npos and hasn't been visited
                     stack.append(npos)
         
         if len(seen) == len(self.tile_positions):
@@ -212,7 +210,7 @@ class HiveBoard():
                                   (pos[0], pos[1]-1), (pos[0]-1, pos[1]), (pos[0]-1, pos[1]+1)]            
         
         for i, npos in enumerate(neighbouring_positions):
-            ntile = self.get_tile(npos)
+            ntile = self.get_tile_stack(npos)
             tile.neighbours[i] = ntile
             
             if ntile and recursed==False: # update neighbour's edges
@@ -231,7 +229,7 @@ class HiveBoard():
                 
                 surrounded = True
                 for npos in npos_arr:
-                    if self.get_tile(npos) == None:
+                    if self.get_tile_stack(npos) == None:
                         surrounded = False
                         break
                 
