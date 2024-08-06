@@ -43,6 +43,8 @@ class HiveBoard():
             self.queen_positions[tile.player-1] = position
 
     def move_tile(self, tile, new_position):
+        old_pos = tile.position
+
         # remove tile from old position
         self.tile_positions[tile.position].remove(tile)
         if len(self.tile_positions[tile.position]) == 0:
@@ -51,7 +53,7 @@ class HiveBoard():
         # add tile to new position
         self.tile_positions[new_position].append(tile)
         tile.position = new_position
-        self.update_edges(tile)
+        self.update_edges(tile, old_Pos)
     
     def fill_hand(self, hand, player):
         '''Fills the hand of the given player with three ants,
@@ -203,18 +205,20 @@ class HiveBoard():
         self.player_turns[player-1] += 1
         return True
     
-    def update_edges(self, tile):
+    def update_edges(self, tile, recursed=False):
         '''Updates the edges of the tile based on its position.'''
         pos = tile.position
         neighbouring_positions = [(pos[0], pos[1]+1), (pos[0]+1, pos[1]), (pos[0]+1, pos[1]-1), 
-                                  (pos[0], pos[1]-1), (pos[0]-1, pos[1]), (pos[0]-1, pos[1]+1)]                 
+                                  (pos[0], pos[1]-1), (pos[0]-1, pos[1]), (pos[0]-1, pos[1]+1)]            
         
         for i, npos in enumerate(neighbouring_positions):
             ntile = self.get_tile(npos)
             tile.neighbours[i] = ntile
-            if ntile: # update neighbour's edges
-                for tile_n in ntile: # if multiple tiles at neighbouring position (stacked)
-                    tile_n.neighbours[(i+3)%6] = tile
+            
+            if ntile and recursed==False: # update neighbour's edges
+                for tile_n in ntile:
+                    self.update_edges(tile_n, True)
+                
     
     def game_over(self):
         '''Checks if the game is over (queen surrounded) and returns the player
