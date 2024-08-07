@@ -26,8 +26,35 @@ class Ant(HiveTile):
         super().__init__('ant', player, n, board)
     
     def get_valid_moves(self):
-        pass
+        if self.covered():
+            return set()
+        
+        seen = set()
+        valid_moves = set()
 
+        original_pos = self.position
+        bfs_queue = deque([original_pos])
+
+        while bfs_queue:
+            pos = bfs_queue.popleft()
+            npos_arr = [(pos[0], pos[1]+1), (pos[0]+1, pos[1]), (pos[0]+1, pos[1]-1),
+                        (pos[0], pos[1]-1), (pos[0]-1, pos[1]), (pos[0]-1, pos[1]+1)]
+            
+            for i in range(len(npos_arr)):
+                if npos_arr[i] not in seen:
+                    seen.add(npos_arr[i])
+                    if self.board.get_tile_stack(npos_arr[i]) == None: # if there is a space to move into
+                        #   check adjacent neighbours to see if sliding is possible
+                        if self.board.get_tile_stack(npos_arr[(i-1)%6]) == None or self.board.get_tile_stack(npos_arr[(i+1)%6]) == None:
+                            # check whether tile can be moved without breaking one-hive rule - this applies during move
+                            self.board.move_tile(self, npos_arr[i])
+                            if not self.board.check_unconnected():
+                                valid_moves.add(npos_arr[i])
+                                bfs_queue.append(npos_arr[i]) 
+                            self.board.move_tile(self, original_pos)
+            
+        return valid_moves
+        
 
 class Beetle(HiveTile):
     def __init__(self, player, n, board):
@@ -122,6 +149,38 @@ class Grasshopper(HiveTile):
 class Spider(HiveTile):
     def __init__(self, player, n, board):
         super().__init__('spider', player, n, board)
+    
+    def get_valid_moves(self):
+        if self.covered():
+                return set()
+            
+        seen = set([self.position])
+        valid_moves = set()
+
+        original_pos = self.position
+        bfs_queue = deque([(original_pos, 0)])
+
+        while bfs_queue:
+            pos, turns = bfs_queue.popleft()
+            npos_arr = [((pos[0], pos[1]+1), turns+1), ((pos[0]+1, pos[1]), turns+1), ((pos[0]+1, pos[1]-1), turns+1),
+                        ((pos[0], pos[1]-1), turns+1), ((pos[0]-1, pos[1]), turns+1), ((pos[0]-1, pos[1]+1), turns+1)]
+            
+            for i in range(len(npos_arr)):
+                if npos_arr[i][0] not in seen:
+                    seen.add(npos_arr[i][0])
+                    if self.board.get_tile_stack(npos_arr[i][0]) == None: # if there is a space to move into
+                        #   check adjacent neighbours to see if sliding is possible
+                        if self.board.get_tile_stack(npos_arr[(i-1)%6][0]) == None or self.board.get_tile_stack(npos_arr[(i+1)%6][0]) == None:
+                            # check whether tile can be moved without breaking one-hive rule - this applies during move
+                            self.board.move_tile(self, npos_arr[i][0])
+                            if not self.board.check_unconnected():
+                                if npos_arr[i][1] == 3: # spider must move exactly 3 spaces
+                                    valid_moves.add(npos_arr[i][0])
+                                elif npos_arr[i][1] < 3: # if spider hasn't moved 3 spaces yet, add to queue
+                                    bfs_queue.append(npos_arr[i])
+                            self.board.move_tile(self, original_pos)
+            
+        return valid_moves
 
 
 class Queen(HiveTile):
