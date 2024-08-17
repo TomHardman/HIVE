@@ -5,6 +5,7 @@ class HiveTile: # parent class for all pieces
     def __init__(self, name, player, n, board, beetle=False):
         self.player = player
         self.name = name + str(n) + '_p' + str(player)
+        self.insect = name
         self.position = None
         self.neighbours = [None, None, None, None, None, None] # clockwise from 12 o'clock
         self.is_beetle = beetle

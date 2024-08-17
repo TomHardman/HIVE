@@ -105,23 +105,30 @@ def draw_ant(x0, y0, width):
 
 def draw_spider(x0, y0, width):
     # Draw some text
-    glColor3f(0.0, 0.0, 0.0)  # Black color for the text
+    glColor3f(0.7, 0.1, 0.4)  # Brown color for the text
     draw_text(x0 - width*0.25, y0, "Spider")
 
 
 def draw_grasshopper(x0, y0, width):
     # Draw some text
-    glColor3f(0.0, 0.0, 0.0)  # Black color for the text
+    glColor3f(0.2, 0.9, 0.3)  # Green color for the text
     draw_text(x0 - width*0.45, y0, "Grasshopper")
 
 
 def draw_beetle(x0, y0, width):
     # Draw some text
-    glColor3f(0.0, 0.0, 0.0)  # Black color for the text
+    glColor3f(1.0, 0.0, 1.0)  # Purple color for the text
     draw_text(x0 - width*0.25, y0, "Beetle")
 
 
 def draw_queen(x0, y0, width):
+    """
+    Draw a Queen Bee inside a hexagon of specified width.
+    
+    :param x0: The x-coordinate of the center of the hexagon.
+    :param y0: The y-coordinate of the center of the hexagon.
+    :param width: The width of the hexagon (distance between opposite vertices).
+    """
     glColor3f(0.969, 0.725, 0.047) 
     draw_ellipse(x0, y0 - 0.05*width, h_rad=width/7, v_rad=width/5)
     draw_ellipse(x0, y0 + 0.16*width, h_rad=width/12, v_rad=width/18)

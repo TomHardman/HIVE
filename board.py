@@ -12,6 +12,12 @@ class HiveBoard():
         self.player2_hand = set()
         self.fill_hand(self.player1_hand, 1)
         self.fill_hand(self.player2_hand, 2)
+        self.pieces_remaining = [{'ant': 3, 
+                                  'beetle': 2, 
+                                  'grasshopper': 3, 
+                                  'spider': 2, 
+                                  'queen': 1} 
+                                for _ in range(2)] # store number of pieces remaining for each player
 
         # initialise turn counters
         self.player_turns = [0, 0]
@@ -38,11 +44,15 @@ class HiveBoard():
         tile.position = position
         self.update_edges(tile)
         
-        # remove tile from hand
+        # remove tile from hand and update turns
         if tile.player == 1:
             self.player1_hand.discard(tile)
+            self.pieces_remaining[0][tile.insect] -= 1
+            self.player_turns[0] += 1
         else:
             self.player2_hand.discard(tile)
+            self.pieces_remaining[1][tile.insect] -= 1
+            self.player_turns[1] += 1
         
         if 'queen' in tile.name:
             self.queens_placed[tile.player-1] = True
@@ -88,10 +98,7 @@ class HiveBoard():
         npos_arr = [(pos[0], pos[1]+1), (pos[0]+1, pos[1]), (pos[0]+1, pos[1]-1), # neighbouring positions
                     (pos[0], pos[1]-1), (pos[0]-1, pos[1]), (pos[0]-1, pos[1]+1)]
         
-        if not any(self.player_turns): # first turn can be anywhere
-            return True
-        
-        elif self.player_turns[player - 1] == 0: # first turn for second player must be adjacent to first player's tile
+        if self.player_turns[player - 1] == 0: # first turn for second player must be adjacent to first player's tile
             for npos in npos_arr:
                 if self.get_tile_stack(npos) and self.get_tile_stack(npos)[-1].player != player:
                     return True
@@ -111,6 +118,12 @@ class HiveBoard():
         '''Returns list of all valid placement positions for a given player'''
         valid_placements = set()
         seen = set()
+
+        if not any(self.player_turns): # first turn can be anywhere
+            return [(0, 0)] # first tile placed at (0, 0)
+
+        elif self.player_turns[player-1] == 0: # first turn for second player must be adjacent to first player's tile
+            return [(0, 1), (1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1)]
 
         for pos in self.tile_positions:
             npos_arr = [(pos[0], pos[1]+1), (pos[0]+1, pos[1]), (pos[0]+1, pos[1]-1), 
