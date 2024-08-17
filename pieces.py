@@ -1,7 +1,7 @@
 from collections import deque
 
 
-class HiveTile(): # parent class for all pieces
+class HiveTile: # parent class for all pieces
     def __init__(self, name, player, n, board, beetle=False):
         self.player = player
         self.name = name + str(n) + '_p' + str(player)

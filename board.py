@@ -19,6 +19,12 @@ class HiveBoard():
         # initialise booleans to store whether queens have been placed
         self.queens_placed = [False, False]
         self.queen_positions = [None, None]
+    
+    def get_player_turn(self):
+        if self.player_turns[0] == self.player_turns[1]:
+            return 1
+        else:
+            return 2
 
     def get_tile_stack(self, position):
         '''Returns the tiles at the given position, or None if there is no tile there.'''
