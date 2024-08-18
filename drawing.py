@@ -72,7 +72,7 @@ def draw_ant(x0, y0, width):
     for i , delta_y in enumerate([-1.8*segment_radius, 0, 1.8*segment_radius]):
         draw_ellipse(x0, y0 + delta_y, 0.75*segment_radius, segment_radius)
         
-        glLineWidth(2.0)
+        glLineWidth(2.0 * PX_SCALE)
         glBegin(GL_LINES)
         if i == 0:
             # Lower legs
@@ -107,8 +107,55 @@ def draw_ant(x0, y0, width):
 
 def draw_spider(x0, y0, width):
     # Draw some text
-    glColor3f(0.7, 0.1, 0.4)  # Brown color for the text
-    draw_text(x0 - width*0.25, y0, "Spider")
+    glColor3f(0.48, 0.25, 0.07)  # Brown color for the text
+    segment_radius = width / 7
+    draw_ellipse(x0, y0, 0.75*segment_radius, segment_radius)
+
+    # pincers
+    glLineWidth(2.0 * PX_SCALE)
+    glBegin(GL_LINES)
+    glVertex2f(x0, y0)
+    glVertex2f(x0 + width/22, y0 + width/5)
+    glVertex2f(x0, y0)
+    glVertex2f(x0 - width/22, y0 + width/5)
+    glEnd()
+
+    # top legs
+    glLineWidth(2.0 * PX_SCALE)
+    glBegin(GL_LINES)
+    glVertex2f(x0, y0)
+    glVertex2f(x0 + width/7, y0 + width/3)
+    glVertex2f(x0, y0)
+    glVertex2f(x0 - width/7, y0 + width/3)
+    glEnd()
+
+    # top mid legs
+    glLineWidth(2.0 * PX_SCALE)
+    glBegin(GL_LINES)
+    glVertex2f(x0, y0)
+    glVertex2f(x0 + width/3, y0 + width/7.5)
+    glVertex2f(x0, y0)
+    glVertex2f(x0 - width/3, y0 + width/7.5)
+    glEnd()
+
+    # bottom mid legs
+    glLineWidth(2.0 * PX_SCALE)
+    glBegin(GL_LINES)
+    glVertex2f(x0, y0)
+    glVertex2f(x0 + width/4.2, y0 - width/8.5)
+    glVertex2f(x0, y0)
+    glVertex2f(x0 - width/4.2, y0 - width/8.5)
+    glEnd()
+
+    # bottom legs
+    glLineWidth(2.0 * PX_SCALE)
+    glBegin(GL_LINES)
+    glVertex2f(x0, y0)
+    glVertex2f(x0 + width/6, y0 - width/3.2)
+    glVertex2f(x0, y0)
+    glVertex2f(x0 - width/6, y0 - width/3.2)
+    glEnd()
+
 
 
 def draw_grasshopper(x0, y0, width):
