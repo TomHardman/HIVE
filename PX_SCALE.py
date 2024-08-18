@@ -1,0 +1,2 @@
+global PX_SCALE
+PX_SCALE = 2

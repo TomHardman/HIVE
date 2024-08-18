@@ -3,12 +3,18 @@ import math
 
 from drawing import *
 
+from PX_SCALE import PX_SCALE # for making sure co-ordinates are the same as mouse co-ords
+
 class PieceMixin:
     def render(self, x=None, y=None):
         if not x:
             x = self.x
+        else:
+            x = x * PX_SCALE
         if not y:
             y = self.y
+        else:
+            y = y * PX_SCALE
 
         # Enable depth testing
         glEnable(GL_DEPTH_TEST)
@@ -40,29 +46,30 @@ class PieceMixin:
     def contains(self, mouse_x, mouse_y):
         # Basic point-in-polygon test for hexagon
         # Approximate by checking if within the circumscribed circle
-        radius = self.width / 2
-        distance = math.sqrt((mouse_x - self.x)**2 + (mouse_y - self.y)**2)
+        radius = self.width / (PX_SCALE * 2)
+        distance = math.sqrt((mouse_x - self.x/PX_SCALE)**2 + (mouse_y - self.y/PX_SCALE)**2)
         return distance <= radius
 
 
 class BoardPiece(PieceMixin):
-    def __init__(self, x, y, width, player, tilename) -> None:
-        self.x = x
-        self.y = y
-        self.width = width
+    def __init__(self, x, y, width, player, tilename, board):
+        self.x = x * PX_SCALE # converts to same co-ord scale as mouse
+        self.y = y * PX_SCALE
+        self.width = width * PX_SCALE
         self.player = player
         self.insect = tilename.split('_')[0][:-1]
         self.name = tilename
-
+        self.board = board
 
 class ButtonPiece(PieceMixin):
-    def __init__(self, x, y, width, player, insect):
-        self.x = x
-        self.y = y
-        self.width = width
+    def __init__(self, x, y, width, player, insect, board):
+        self.x = x * PX_SCALE
+        self.y = y * PX_SCALE
+        self.width = width * PX_SCALE
         self.player = player
         self.insect = insect
+        self.board = board
     
     def render_n_remaining(self, n):
         glColor3f(0.0, 0.0, 0.0)
-        draw_text(self.x - 3, self.y - 60, str(n))
+        draw_text(self.x - 3 * PX_SCALE, self.y - 60 * PX_SCALE, str(n))

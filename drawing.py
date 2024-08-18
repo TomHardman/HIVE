@@ -2,6 +2,8 @@ from OpenGL.GL import *
 from OpenGL.GLUT import glutBitmapCharacter, GLUT_BITMAP_8_BY_13
 import math
 
+from PX_SCALE import PX_SCALE
+
 def draw_hexagon(x0, y0, width, fill=True):
     """
     Draw a filled hexagon of a specified width.
@@ -15,7 +17,7 @@ def draw_hexagon(x0, y0, width, fill=True):
     if fill:
         glBegin(GL_POLYGON)
     else:
-        glLineWidth(4.0) 
+        glLineWidth(4.0 * PX_SCALE) 
         glBegin(GL_LINE_LOOP)
     
     for i in range(6):  # Hexagon has 6 vertices

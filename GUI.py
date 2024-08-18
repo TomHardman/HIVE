@@ -1,5 +1,7 @@
 import sys
 import math
+from collections import defaultdict
+
 
 from PyQt5 import QtGui       # extends QtCore with GUI functionality
 from PyQt5 import QtWidgets
@@ -13,12 +15,18 @@ from gui_pieces import BoardPiece, ButtonPiece
 from board import HiveBoard
 from drawing import draw_hexagon
 
+from PX_SCALE import PX_SCALE
 
 class HiveGUI(QtWidgets.QMainWindow):   
     def __init__(self):
         super().__init__()
         self.resize(1000, 800)
         self.setWindowTitle('HIVE GUI')
+
+        # game state
+        self.board = HiveBoard()
+        self.placing_tile = None   # tile being placed by player - stored as ButtonPiece object
+        self.moving_tile = None    # tile being moved by player - stored as BoardPiece object
 
         # general layout
         self.splitter = QtWidgets.QSplitter(Qt.Vertical)
@@ -28,14 +36,11 @@ class HiveGUI(QtWidgets.QMainWindow):
         self.splitter.addWidget(self.selection_canvas)
         self.setCentralWidget(self.splitter)
         
-        # game state
-        self.board = HiveBoard()
-        self.placing_tile = None   # tile being placed by player - stored as ButtonPiece object
-        self.moving_tile = None    # tile being moved by player - stored as BoardPiece object
     
     def update_GUI(self):
         self.board_canvas.update()
         self.selection_canvas.update()
+        self.check_game_over()
     
     @property
     def player_turn(self):
@@ -44,6 +49,11 @@ class HiveGUI(QtWidgets.QMainWindow):
     @property
     def pieces_remaining(self):
         return self.board.pieces_remaining
+    
+    def check_game_over(self):
+        if victor := self.board.game_over():
+            self.close()
+            print(f'Player {victor} Wins!')
 
 
 class BoardCanvas(QtOpenGL.QGLWidget):
@@ -57,7 +67,7 @@ class BoardCanvas(QtOpenGL.QGLWidget):
         self.mouse_x = 0
         self.mouse_y = 0
 
-        self.tiles = {} # dictionary mapping BoardPiece object to board position and canvas position
+        self.tiles = defaultdict(list) # dictionary mapping BoardPiece object to tile and canvas position
     
     def initializeGL(self):
         self.qglClearColor(QtGui.QColor(255, 255, 255))
@@ -81,13 +91,22 @@ class BoardCanvas(QtOpenGL.QGLWidget):
         self.renderText(10, self.height() - 20, 
                         f"Mouse Position: ({self.mouse_x}, {self.mouse_y})", QtGui.QFont("Arial", 12))
         
+        if self.tiles.items():
+            for board_pos, tiles_list in self.tiles.items():
+                for tile, canvas_pos in tiles_list:
+                    if self.parent.moving_tile and tile == self.parent.moving_tile:
+                        pass
+                    else:
+                        tile.render(canvas_pos[0], canvas_pos[1])
+        
         if self.parent.placing_tile:
             self.display_valid_moves()
             if self.contains_mouse:
                 self.parent.placing_tile.render(self.mouse_x, self.height()-self.mouse_y) # render tile being placed in mouse position
         
-        for tile, (board_pos, canvas_pos) in self.tiles.items():
-            tile.render(canvas_pos[0], canvas_pos[1])
+        if self.parent.moving_tile:
+            self.display_valid_moves()
+            self.parent.moving_tile.render(self.mouse_x, (self.height() - self.mouse_y))
         
         # Display player turn
         gl.glColor3f(0.0, 0.0, 0.0)
@@ -96,14 +115,24 @@ class BoardCanvas(QtOpenGL.QGLWidget):
     
     def display_valid_moves(self):
         if self.parent.placing_tile:
-            valid_placements = self.parent.board.get_valid_placements(self.parent.player_turn)
+            valid_placements = self.parent.board.get_valid_placements(self.parent.player_turn,
+                                                                      self.parent.placing_tile.insect)
             for pos in valid_placements:
                 board_pos = self.get_canvas_coords(pos)
                 gl.glColor3f(0.0, 1.0, 0.0)  # Green
-                draw_hexagon(board_pos[0], board_pos[1], 99, fill=False)
+                draw_hexagon(board_pos[0] * PX_SCALE, board_pos[1] * PX_SCALE, 
+                             99 * PX_SCALE, fill=False)
                 
         if self.parent.moving_tile:
-            pass
+            tilename = self.parent.moving_tile.name
+            tile_object = self.parent.board.name_obj_mapping[tilename]
+            valid_moves = tile_object.get_valid_moves()
+
+            for pos in valid_moves:
+                board_pos = self.get_canvas_coords(pos)
+                gl.glColor3f(0.0, 1.0, 0.0)  # Green
+                draw_hexagon(board_pos[0] * PX_SCALE, board_pos[1] * PX_SCALE, 
+                             99 * PX_SCALE, fill=False)
     
     def get_canvas_coords(self, board_pos):
         x0 = self.width() // 2
@@ -133,9 +162,20 @@ class BoardCanvas(QtOpenGL.QGLWidget):
         self.parent.update_GUI() # Trigger paint event
     
     def mousePressEvent(self, event):
-        
         if self.parent.moving_tile:
-            pass
+            if chosen_pos := self.valid_move_clicked(event.x(), event.y()):         
+                # Place tile in chosen position
+                tilename = self.parent.moving_tile.name
+                tile_object = self.parent.board.name_obj_mapping[tilename]
+                original_pos = tile_object.position
+                self.parent.board.move_tile(tile_object, chosen_pos, update_turns=True)
+
+                # Update self.tiles
+                canvas_pos = self.get_canvas_coords(chosen_pos)
+                self.tiles[chosen_pos].append((self.parent.moving_tile, canvas_pos))
+                self.tiles[original_pos].pop()
+        
+            self.parent.moving_tile = None
         
         elif self.parent.placing_tile:
             if chosen_pos := self.valid_placement_clicked(event.x(), event.y()):
@@ -149,18 +189,55 @@ class BoardCanvas(QtOpenGL.QGLWidget):
 
                 # Render tile in chosen position
                 canvas_pos = self.get_canvas_coords(chosen_pos)
-                tile = BoardPiece(canvas_pos[0], canvas_pos[1], 100, player, tilename)
-                self.tiles[tile] = (chosen_pos, canvas_pos)
+                tile = BoardPiece(canvas_pos[0], canvas_pos[1], 100, player, tilename,
+                                  self.parent.board)
+                self.tiles[chosen_pos].append((tile, canvas_pos))
 
             self.parent.placing_tile = None
         
+        else: # if not currently in moving or placing mode
+            if tile_clicked := self.get_tile_clicked(event.x(), event.y()):
+                self.parent.moving_tile = tile_clicked
+                
         self.parent.update_GUI()
 
     def get_tile_clicked(self, x, y):
-        return False
-    
+        """If a valid tile is clicked and can be moved returns the BoardPiece object for tile"""
+        for pos, tiles in self.parent.board.tile_positions.items():
+            canvas_pos = self.get_canvas_coords(pos)
+            mouse_pos = (canvas_pos[0], self.height() - canvas_pos[1])
+            radius = 50
+            distance = math.sqrt((x - mouse_pos[0])**2 + (y - mouse_pos[1])**2)
+            if distance <= radius * 0.9:
+                tile_bp = self.tiles[pos][-1][0]
+                break
+        
+        if tile_bp:
+            assert(tile_bp.name == tiles[-1].name)
+            # outside of for loop as get_valid_moves would change dict keys while iterating
+            if tiles[-1].get_valid_moves() and tile_bp.player == self.parent.player_turn:
+                return tile_bp
+                  
     def valid_placement_clicked(self, x, y):
-        for pos in self.parent.valid_placements:
+        """If in placing tile mode checks if position clicked is a valid placement and
+        returns board position (in hex co-ordinates) if so"""
+        for pos in self.parent.board.get_valid_placements(self.parent.player_turn,
+                                                          self.parent.placing_tile.insect):
+            canvas_pos = self.get_canvas_coords(pos)
+            mouse_pos = (canvas_pos[0], self.height() - canvas_pos[1])
+            radius = 50
+            distance = math.sqrt((x - mouse_pos[0])**2 + (y - mouse_pos[1])**2)
+            if distance <= radius * 0.9:
+                return pos
+        return None
+    
+    def valid_move_clicked(self, x, y):
+        """If in moving tile mode checks if position clicked is a valid move and
+        returns board position (in hex co-ordinates) if so"""
+        tilename = self.parent.moving_tile.name
+        tile_obj = self.parent.board.name_obj_mapping[tilename] # get tile object
+        
+        for pos in tile_obj.get_valid_moves():
             canvas_pos = self.get_canvas_coords(pos)
             mouse_pos = (canvas_pos[0], self.height() - canvas_pos[1])
             radius = 50
@@ -218,15 +295,18 @@ class SelectionCanvas(QtOpenGL.QGLWidget):
         x_pos = [self.width()//2 + i*self.width()//5 for i in range(-2, 3)]
         y_pos = [self.height()//2 for _ in range(5)]
 
-        self.buttons_p1 = [ButtonPiece(x, y, 100, 1, insect) for x, y, insect in zip(x_pos, y_pos, insects)]
-        self.buttons_p2 = [ButtonPiece(x, y, 100, 2, insect) for x, y, insect in zip(x_pos, y_pos, insects)]
+        self.buttons_p1 = [ButtonPiece(x, y, 2/3 * self.height(), 1, insect, self.parent.board) 
+                           for x, y, insect in zip(x_pos, y_pos, insects)]
+        self.buttons_p2 = [ButtonPiece(x, y, 2/3 * self.height(), 2, insect, self.parent.board) 
+                           for x, y, insect in zip(x_pos, y_pos, insects)]
         self.buttons = [self.buttons_p1, self.buttons_p2]
         
     def renderButtons(self):
         player = self.parent.player_turn
         for i in range(len(self.buttons[0])):
                 button = self.buttons[player-1][i]
-                if self.parent.pieces_remaining[player-1][button.insect] > 0:
+                if self.parent.board.get_valid_placements(self.parent.player_turn,
+                                                          button.insect):
                     button.render()
                     button.render_n_remaining(self.parent.pieces_remaining[player-1][button.insect])
         
@@ -244,15 +324,18 @@ class SelectionCanvas(QtOpenGL.QGLWidget):
     
     def mousePressEvent(self, event):
         # Check if a button is clicked
+        if self.parent.moving_tile:
+            self.parent.moving_tile = None
+
         if clicked_tile := self.get_button_clicked(event.x(), event.y()):
             self.parent.placing_tile = clicked_tile
-            self.parent.valid_placements = self.parent.board.get_valid_placements(self.parent.player_turn)
+            valid_placements = self.parent.board.get_valid_placements(self.parent.player_turn,
+                                                                      self.parent.placing_tile.insect)
             
-            if not self.parent.valid_placements: # if no valid placements, don't allow tile to be placed
+            if not valid_placements: # if no valid placements, don't allow tile to be placed
                 self.parent.placing_tile = None
         else:
             self.parent.placing_tile = None
-            self.parent.valid_placements = []
         self.parent.update_GUI() # Trigger paint event
 
     def get_button_clicked(self, x, y):

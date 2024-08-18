@@ -20,6 +20,10 @@ class HiveTile: # parent class for all pieces
     def covered(self):
         '''Returns True if tile is covered by beetle and is therefore immobile.'''
         return self.board.get_tile_stack(self.position)[-1] != self # checks if top tile at current position is self
+    
+    def queen_placed(self):
+        '''Returns True if queen has already been placed'''
+        return self.board.pieces_remaining[self.player - 1]['queen'] == 0
 
 
 class Ant(HiveTile):
@@ -27,7 +31,7 @@ class Ant(HiveTile):
         super().__init__('ant', player, n, board)
     
     def get_valid_moves(self):
-        if self.covered():
+        if self.covered() or not self.queen_placed():
             return set()
         
         seen = set()
@@ -62,7 +66,7 @@ class Beetle(HiveTile):
         super().__init__('beetle', player, n, board, beetle=True)
     
     def get_valid_moves(self):
-        if self.covered():
+        if self.covered() or not self.queen_placed():
             return set()
         
         valid_moves_temp = set()
@@ -97,7 +101,7 @@ class Grasshopper(HiveTile):
         super().__init__('grasshopper', player, n, board)
     
     def get_valid_moves(self):
-        if self.covered():
+        if self.covered() or not self.queen_placed():
             return set()
 
         valid_moves_temp = set() # temporary set to store valid moves before checking connectedness
@@ -152,7 +156,7 @@ class Spider(HiveTile):
         super().__init__('spider', player, n, board)
     
     def get_valid_moves(self):
-        if self.covered():
+        if self.covered() or not self.queen_placed():
                 return set()
             
         seen = set([self.position])
@@ -189,7 +193,7 @@ class Queen(HiveTile):
         super().__init__('queen', player, n, board)
     
     def get_valid_moves(self):
-        if self.covered():
+        if self.covered() or not self.queen_placed():
             return set()
         
         valid_moves_temp = set()

@@ -22,8 +22,7 @@ class HiveBoard():
         # initialise turn counters
         self.player_turns = [0, 0]
 
-        # initialise booleans to store whether queens have been placed
-        self.queens_placed = [False, False]
+        # initialise booleans to store queen positions
         self.queen_positions = [None, None]
     
     def get_player_turn(self):
@@ -55,10 +54,9 @@ class HiveBoard():
             self.player_turns[1] += 1
         
         if 'queen' in tile.name:
-            self.queens_placed[tile.player-1] = True
             self.queen_positions[tile.player-1] = position
 
-    def move_tile(self, tile, new_position):
+    def move_tile(self, tile, new_position, update_turns=False):
         # remove tile from old position
         self.tile_positions[tile.position].remove(tile)
         if len(self.tile_positions[tile.position]) == 0:
@@ -68,6 +66,11 @@ class HiveBoard():
         self.tile_positions[new_position].append(tile)
         tile.position = new_position
         self.update_edges(tile)
+
+        # when called from GUI we want this method to update player turns
+        if update_turns:
+            player = tile.player
+            self.player_turns[player - 1] += 1
     
     def fill_hand(self, hand, player):
         '''Fills the hand of the given player with three ants,
@@ -114,16 +117,24 @@ class HiveBoard():
                     
         return connected and valid
          
-    def get_valid_placements(self, player):
+    def get_valid_placements(self, player, insect):
         '''Returns list of all valid placement positions for a given player'''
         valid_placements = set()
         seen = set()
+
+        if not self.pieces_remaining[player - 1][insect]:
+            return []
 
         if not any(self.player_turns): # first turn can be anywhere
             return [(0, 0)] # first tile placed at (0, 0)
 
         elif self.player_turns[player-1] == 0: # first turn for second player must be adjacent to first player's tile
             return [(0, 1), (1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1)]
+        
+        # Queen must be placed within first three turns
+        elif self.pieces_remaining[player - 1]['queen'] == 1 and self.player_turns[player-1] == 2:
+            if insect != 'queen':
+                return []
 
         for pos in self.tile_positions:
             npos_arr = [(pos[0], pos[1]+1), (pos[0]+1, pos[1]), (pos[0]+1, pos[1]-1), 
@@ -182,7 +193,7 @@ class HiveBoard():
 
         tile = self.name_obj_mapping[tile_name]
         turns = self.player_turns[player-1]
-        queen_placed = self.queens_placed[player-1]
+        queen_placed = self.pieces_remaining[player - 1]['queen'] == 0
 
         if queen_placed == False:
             if move_type != 'place':
