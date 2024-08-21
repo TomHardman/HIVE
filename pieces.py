@@ -82,9 +82,20 @@ class Beetle(HiveTile):
                 # check adjacent neighbours to see if sliding is possible
                 if self.board.get_tile_stack(npos_arr[(i-1)%6]) == None or self.board.get_tile_stack(npos_arr[(i+1)%6]) == None:
                     valid_moves_temp.add(npos_arr[i])
+                
+                # slide logic doesn't apply if climbing down
+                elif len(self.board.get_tile_stack(original_pos)) > 1:
+                    valid_moves_temp.add(npos_arr[i])
 
-            elif len(self.board.get_tile_stack(npos_arr[i])) <= len(self.board.get_tile_stack(original_pos)): # can only climb one level at once
+            # check sliding logic at higher level
+            elif len(self.board.get_tile_stack(original_pos)) == 2 and len(self.board.get_tile_stack(npos_arr[i])) == 1:
+                if self.board.get_tile_stack(npos_arr[(i-1)%6]) == None or self.board.get_tile_stack(npos_arr[(i+1)%6]) == None:
+                    valid_moves_temp.add(npos_arr[i])
+                elif not (len(self.board.get_tile_stack(npos_arr[(i-1)%6])) == 2 and len(self.board.get_tile_stack(npos_arr[(i-1)%6])) == 2):
+                    valid_moves_temp.add(npos_arr[i])
+            else:
                 valid_moves_temp.add(npos_arr[i])
+
         
         # check if the move is valid by checking if the hive is still connected after moving
         for move in valid_moves_temp:

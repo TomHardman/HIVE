@@ -71,6 +71,9 @@ class HiveBoard():
         if update_turns:
             player = tile.player
             self.player_turns[player - 1] += 1
+        
+        if tile.name.split('_')[0][:-1] == 'queen':
+            self.queen_positions[tile.player-1] = new_position
     
     def fill_hand(self, hand, player):
         '''Fills the hand of the given player with three ants,

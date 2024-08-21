@@ -54,6 +54,12 @@ class HiveGUI(QtWidgets.QMainWindow):
         if victor := self.board.game_over():
             self.close()
             print(f'Player {victor} Wins!')
+    
+    def test_valid(self):
+        for pos, (bp, _) in self.board_canvas.tiles:
+            tilename_bp = bp.name # tile name of BoardPiece object
+            tilename_ht = self.board.tile_positions[pos].name # tile name of HiveTile object
+            assert (tilename_bp == tilename_ht)
 
 
 class BoardCanvas(QtOpenGL.QGLWidget):
@@ -67,7 +73,7 @@ class BoardCanvas(QtOpenGL.QGLWidget):
         self.mouse_x = 0
         self.mouse_y = 0
 
-        self.tiles = defaultdict(list) # dictionary mapping BoardPiece object to tile and canvas position
+        self.tiles = defaultdict(list) # dictionary mapping board co-ordinate to BoardPiece object and canvas position
     
     def initializeGL(self):
         self.qglClearColor(QtGui.QColor(255, 255, 255))
@@ -203,6 +209,7 @@ class BoardCanvas(QtOpenGL.QGLWidget):
 
     def get_tile_clicked(self, x, y):
         """If a valid tile is clicked and can be moved returns the BoardPiece object for tile"""
+        tile_bp = None
         for pos, tiles in self.parent.board.tile_positions.items():
             canvas_pos = self.get_canvas_coords(pos)
             mouse_pos = (canvas_pos[0], self.height() - canvas_pos[1])
