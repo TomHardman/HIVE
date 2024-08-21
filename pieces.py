@@ -115,15 +115,17 @@ class Grasshopper(HiveTile):
         if self.covered() or not self.queen_placed():
             return set()
         
-        self.board.move_tile(self, (1000, 1000)) # test if removing from original pos breaks hive
+        original_pos = self.position
+        
+        self.board.move_tile(self, (0, 0)) # test if removing from original pos breaks hive
         if self.board.check_unconnected():
+            self.board.move_tile(self, original_pos)
             return set()
         self.board.move_tile(self, original_pos)
 
         valid_moves_temp = set() # temporary set to store valid moves before checking connectedness
         valid_moves = set()
 
-        original_pos = self.position
         npos_arr = [(original_pos[0], original_pos[1]+1), (original_pos[0]+1, original_pos[1]), 
                     (original_pos[0]+1, original_pos[1]-1), (original_pos[0], original_pos[1]-1), 
                     (original_pos[0]-1, original_pos[1]), (original_pos[0]-1, original_pos[1]+1)]
