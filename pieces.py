@@ -52,12 +52,12 @@ class Ant(HiveTile):
                         #   check adjacent neighbours to see if sliding is possible
                         if self.board.get_tile_stack(npos_arr[(i-1)%6]) == None or self.board.get_tile_stack(npos_arr[(i+1)%6]) == None:
                             # check whether tile can be moved without breaking one-hive rule - this applies during move
-                            self.board.move_tile(self, npos_arr[i])
-                            if not self.board.check_unconnected():
-                                valid_moves.add(npos_arr[i])
-                                bfs_queue.append(npos_arr[i]) 
-                            self.board.move_tile(self, original_pos)
-            
+                            if self.board.get_tile_stack(npos_arr[(i-1)%6]) != self.board.get_tile_stack(npos_arr[(i+1)%6]):
+                                self.board.move_tile(self, npos_arr[i])
+                                if not self.board.check_unconnected():
+                                    valid_moves.add(npos_arr[i])
+                                    bfs_queue.append(npos_arr[i]) 
+                                self.board.move_tile(self, original_pos) 
         return valid_moves
         
 
@@ -81,7 +81,12 @@ class Beetle(HiveTile):
             if self.board.get_tile_stack(npos_arr[i]) == None:
                 # check adjacent neighbours to see if sliding is possible
                 if self.board.get_tile_stack(npos_arr[(i-1)%6]) == None or self.board.get_tile_stack(npos_arr[(i+1)%6]) == None:
-                    valid_moves_temp.add(npos_arr[i])
+                    # check whether tile can be moved without breaking one-hive rule - this applies during move
+                    if len(self.board.get_tile_stack(original_pos)) == 1:
+                        if self.board.get_tile_stack(npos_arr[(i-1)%6]) != self.board.get_tile_stack(npos_arr[(i+1)%6]):
+                            valid_moves_temp.add(npos_arr[i])
+                    else:
+                        valid_moves_temp.add(npos_arr[i])
                 
                 # slide logic doesn't apply if climbing down
                 elif len(self.board.get_tile_stack(original_pos)) > 1:
@@ -195,13 +200,14 @@ class Spider(HiveTile):
                         #   check adjacent neighbours to see if sliding is possible
                         if self.board.get_tile_stack(npos_arr[(i-1)%6][0]) == None or self.board.get_tile_stack(npos_arr[(i+1)%6][0]) == None:
                             # check whether tile can be moved without breaking one-hive rule - this applies during move
-                            self.board.move_tile(self, npos_arr[i][0])
-                            if not self.board.check_unconnected():
-                                if npos_arr[i][1] == 3: # spider must move exactly 3 spaces
-                                    valid_moves.add(npos_arr[i][0])
-                                elif npos_arr[i][1] < 3: # if spider hasn't moved 3 spaces yet, add to queue
-                                    bfs_queue.append(npos_arr[i])
-                            self.board.move_tile(self, original_pos)
+                            if self.board.get_tile_stack(npos_arr[(i-1)%6]) != self.board.get_tile_stack(npos_arr[(i+1)%6]):
+                                self.board.move_tile(self, npos_arr[i][0])
+                                if not self.board.check_unconnected():
+                                    if npos_arr[i][1] == 3: # spider must move exactly 3 spaces
+                                        valid_moves.add(npos_arr[i][0])
+                                    elif npos_arr[i][1] < 3: # if spider hasn't moved 3 spaces yet, add to queue
+                                        bfs_queue.append(npos_arr[i])
+                                self.board.move_tile(self, original_pos)
             
         return valid_moves
 
@@ -226,7 +232,8 @@ class Queen(HiveTile):
             if self.board.get_tile_stack(npos_arr[i]) == None:
                 # check adjacent neighbours to see if sliding is possible
                 if self.board.get_tile_stack(npos_arr[(i-1)%6]) == None or self.board.get_tile_stack(npos_arr[(i+1)%6]) == None:
-                    valid_moves_temp.add(npos_arr[i])
+                    if self.board.get_tile_stack(npos_arr[(i-1)%6]) != self.board.get_tile_stack(npos_arr[(i+1)%6]):
+                        valid_moves_temp.add(npos_arr[i])
         
         # check if the move is valid by checking if the hive is still connected after moving
         for move in valid_moves_temp:
