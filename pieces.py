@@ -114,6 +114,11 @@ class Grasshopper(HiveTile):
     def get_valid_moves(self):
         if self.covered() or not self.queen_placed():
             return set()
+        
+        self.board.move_tile(self, (1000, 1000)) # test if removing from original pos breaks hive
+        if self.board.check_unconnected():
+            return set()
+        self.board.move_tile(self, original_pos)
 
         valid_moves_temp = set() # temporary set to store valid moves before checking connectedness
         valid_moves = set()
@@ -154,7 +159,7 @@ class Grasshopper(HiveTile):
 
         # check if the move is valid by checking if the hive is still connected
         for move in valid_moves_temp:
-            self.board.move_tile(self, move)
+            self.board.move_tile(self, move) 
             if not self.board.check_unconnected():
                 valid_moves.add(move)
             self.board.move_tile(self, original_pos)
