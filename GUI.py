@@ -1,5 +1,6 @@
 import sys
 import math
+import time
 from collections import defaultdict
 
 
@@ -7,6 +8,8 @@ from PyQt5 import QtGui       # extends QtCore with GUI functionality
 from PyQt5 import QtWidgets
 from PyQt5 import QtOpenGL 
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QApplication
+from PyQt5.QtCore import QEventLoop
 
 import OpenGL.GL as gl
 from OpenGL import GLU
@@ -18,13 +21,13 @@ from drawing import draw_hexagon
 from PX_SCALE import PX_SCALE
 
 class HiveGUI(QtWidgets.QMainWindow):   
-    def __init__(self):
+    def __init__(self, board):
         super().__init__()
         self.resize(1000, 800)
         self.setWindowTitle('HIVE GUI')
 
         # game state
-        self.board = HiveBoard()
+        self.board = board
         self.placing_tile = None   # tile being placed by player - stored as ButtonPiece object
         self.moving_tile = None    # tile being moved by player - stored as BoardPiece object
 
@@ -35,13 +38,41 @@ class HiveGUI(QtWidgets.QMainWindow):
         self.splitter.addWidget(self.board_canvas)
         self.splitter.addWidget(self.selection_canvas)
         self.setCentralWidget(self.splitter)
-        
+
+        # player attributes to store if a certain player is an artificial agent
+        self.player1 = None
+        self.player2 = None
     
+    def set_player(self, player, agent):
+        if player == 1:
+            self.player1 = agent
+        elif player == 2:
+            self.player2 = agent
+        else:
+            raise ValueError(f'{player} not a valid player number')
+        
     def update_GUI(self):
         self.board_canvas.update()
         self.selection_canvas.update()
         self.check_game_over()
-    
+
+        if self.player1 and self.player_turn==1:
+            QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)
+            time.sleep(1)
+            self.player1.random_action()
+            self.update_from_board()
+        
+        if self.player2 and self.player_turn==2:
+            QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)
+            time.sleep(1)
+            self.player2.random_action()
+            self.update_from_board()
+        
+        self.board_canvas.update()
+        self.selection_canvas.update()
+        self.check_game_over()
+
+
     @property
     def player_turn(self):
         return self.board.get_player_turn()
@@ -56,10 +87,35 @@ class HiveGUI(QtWidgets.QMainWindow):
             print(f'Player {victor} Wins!')
     
     def test_valid(self):
-        for pos, (bp, _) in self.board_canvas.tiles:
-            tilename_bp = bp.name # tile name of BoardPiece object
-            tilename_ht = self.board.tile_positions[pos].name # tile name of HiveTile object
-            assert (tilename_bp == tilename_ht)
+        for pos, info_list in self.board_canvas.tiles:
+            for tile_bp, _ in info_list:
+                tile_ht = tile_bp.tile # tile name of BoardPiece object
+            assert (pos == tile_ht.position)
+    
+    def update_from_board(self):
+        """
+        Updates the board_canvas.tiles dictionary with the current state of the board
+        This allows an artificial player to interact directly with the HIVEBoard object
+        and the changes to be shown in the GUI
+        """
+        # Create BoardPiece object for tile if it doesn't already exist
+        for pos, tiles in self.board.tile_positions.items():
+            canvas_pos = self.board_canvas.get_canvas_coords(pos)
+            for tile in tiles:
+                if tile not in self.board_canvas.bp_tile_dict:
+                    tile_bp = BoardPiece(canvas_pos[0], canvas_pos[1], 100, tile, self.board)
+                    self.board_canvas.tiles[pos].append((tile_bp, canvas_pos))
+                    self.board_canvas.bp_tile_dict[tile] = tile_bp
+        
+        # Update position of other BoardPiece tiles
+        for pos, info_list in self.board_canvas.tiles.items():
+            for tile_bp, canvas_pos in info_list:
+                correct_pos = tile_bp.hive_tile.position
+                canvas_pos = self.board_canvas.get_canvas_coords(correct_pos)
+                if correct_pos != pos:
+                    self.board_canvas.tiles[pos].pop()
+                    self.board_canvas.tiles[correct_pos].append((tile_bp, canvas_pos))
+                    return # we should only ever have to update the position of one tile
 
 
 class BoardCanvas(QtOpenGL.QGLWidget):
@@ -74,6 +130,7 @@ class BoardCanvas(QtOpenGL.QGLWidget):
         self.mouse_y = 0
 
         self.tiles = defaultdict(list) # dictionary mapping board co-ordinate to BoardPiece object and canvas position
+        self.bp_tile_dict = defaultdict(list) # dictionary mapping HiveTile object to BoardPiece object
     
     def initializeGL(self):
         self.qglClearColor(QtGui.QColor(255, 255, 255))
@@ -195,9 +252,9 @@ class BoardCanvas(QtOpenGL.QGLWidget):
 
                 # Render tile in chosen position
                 canvas_pos = self.get_canvas_coords(chosen_pos)
-                tile = BoardPiece(canvas_pos[0], canvas_pos[1], 100, player, tilename,
-                                  self.parent.board)
-                self.tiles[chosen_pos].append((tile, canvas_pos))
+                tile_bp = BoardPiece(canvas_pos[0], canvas_pos[1], 100, tile_object, self.parent.board)
+                self.tiles[chosen_pos].append((tile_bp, canvas_pos))
+                self.bp_tile_dict[tile_object] = tile_bp
 
             self.parent.placing_tile = None
         
@@ -360,7 +417,8 @@ class SelectionCanvas(QtOpenGL.QGLWidget):
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
 
-    window = HiveGUI()
+    board = HiveBoard()
+    window = HiveGUI(board)
     window.show()
 
     sys.exit(app.exec_())

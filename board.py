@@ -2,6 +2,21 @@ from collections import defaultdict
 from pieces import Ant, Beetle, Grasshopper, Spider, Queen
 
 
+ACTIONSPACE  = {'queen1': 0,
+                'spider1': 1,
+                'spider2': 2,
+                'beetle1': 3,
+                'beetle2': 4,
+                'ant1': 5,
+                'ant2': 6,
+                'ant3': 7,
+                'grasshopper1': 8,
+                'grasshopper2': 9,
+                'grasshopper3': 10}
+
+ACTIONSPACE_INV = {v: k for k, v in ACTIONSPACE.items()}
+
+
 class HiveBoard():
     def __init__(self) -> None:
         self.tile_positions  = defaultdict(list) # mapping from board position to tile objects
@@ -57,6 +72,8 @@ class HiveBoard():
             self.queen_positions[tile.player-1] = position
 
     def move_tile(self, tile, new_position, update_turns=False):
+        """Moves a tile to a new position on the board. Player turns
+        are only updated if update turns is set to true"""
         # remove tile from old position
         self.tile_positions[tile.position].remove(tile)
         if len(self.tile_positions[tile.position]) == 0:
@@ -160,8 +177,10 @@ class HiveBoard():
         return valid_placements
     
     def check_unconnected(self):
-        '''Returns True if the board is in an unconnected state, False otherwise.
-        Performs a depth-first search to check if all tiles are connected.'''
+        """
+        Returns True if the board is in an unconnected state, False otherwise.
+        Performs a depth-first search to check if all tiles are connected.
+        """
         seen = set()
         stack = [list(self.tile_positions.keys())[0]] # start search from a single position
         connected = False
@@ -270,3 +289,38 @@ class HiveBoard():
                     return 2 if i == 0 else 1
         
         return False
+    
+
+    def get_legal_actions(self, player):
+        '''Returns a list of all legal actions for the given player
+        Action space is represented as a dictionary mapping each board
+        position to an array of possible moves. Each array index represents
+        placing/moving a different tile at/to that position.'''
+        legal_actions = defaultdict(list)
+        player_tiles = []
+
+        for tile in self.name_obj_mapping.values():
+            if tile.player == player:
+                player_tiles.append(tile)
+        
+        for tile in player_tiles:
+            if tile in self.player1_hand or tile in self.player2_hand:
+                for pos in self.get_valid_placements(player, tile.insect):
+                    legal_actions[pos].append(tile)
+            else:
+                for pos in tile.get_valid_moves():
+                    legal_actions[pos].append(tile)
+        
+        # map tiles at each position to array of indices
+        for pos, tiles in legal_actions.items():
+            moves = [False for i in range(11)]
+            for tile in tiles:
+                idx = ACTIONSPACE[tile.name.split('_')[0]]
+                moves[idx] = True
+            legal_actions[pos] = moves
+        
+        return legal_actions
+
+            
+            
+        

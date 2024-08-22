@@ -47,7 +47,6 @@ class Ant(HiveTile):
             
             for i in range(len(npos_arr)):
                 if npos_arr[i] not in seen:
-                    seen.add(npos_arr[i])
                     if self.board.get_tile_stack(npos_arr[i]) == None: # if there is a space to move into
                         #   check adjacent neighbours to see if sliding is possible
                         if self.board.get_tile_stack(npos_arr[(i-1)%6]) == None or self.board.get_tile_stack(npos_arr[(i+1)%6]) == None:
@@ -56,6 +55,7 @@ class Ant(HiveTile):
                                 self.board.move_tile(self, npos_arr[i])
                                 if not self.board.check_unconnected():
                                     valid_moves.add(npos_arr[i])
+                                    seen.add(npos_arr[i]) # only stores spaces ant has explored from
                                     bfs_queue.append(npos_arr[i]) 
                                 self.board.move_tile(self, original_pos) 
         return valid_moves
@@ -195,17 +195,17 @@ class Spider(HiveTile):
             
             for i in range(len(npos_arr)):
                 if npos_arr[i][0] not in seen:
-                    seen.add(npos_arr[i][0])
                     if self.board.get_tile_stack(npos_arr[i][0]) == None: # if there is a space to move into
                         #   check adjacent neighbours to see if sliding is possible
                         if self.board.get_tile_stack(npos_arr[(i-1)%6][0]) == None or self.board.get_tile_stack(npos_arr[(i+1)%6][0]) == None:
                             # check whether tile can be moved without breaking one-hive rule - this applies during move
-                            if self.board.get_tile_stack(npos_arr[(i-1)%6]) != self.board.get_tile_stack(npos_arr[(i+1)%6]):
+                            if self.board.get_tile_stack(npos_arr[(i-1)%6][0]) != self.board.get_tile_stack(npos_arr[(i+1)%6][0]):
                                 self.board.move_tile(self, npos_arr[i][0])
                                 if not self.board.check_unconnected():
                                     if npos_arr[i][1] == 3: # spider must move exactly 3 spaces
                                         valid_moves.add(npos_arr[i][0])
                                     elif npos_arr[i][1] < 3: # if spider hasn't moved 3 spaces yet, add to queue
+                                        seen.add(npos_arr[i][0])
                                         bfs_queue.append(npos_arr[i])
                                 self.board.move_tile(self, original_pos)
             

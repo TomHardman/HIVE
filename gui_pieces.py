@@ -52,13 +52,15 @@ class PieceMixin:
 
 
 class BoardPiece(PieceMixin):
-    def __init__(self, x, y, width, player, tilename, board):
+    def __init__(self, x, y, width, tile, board):
         self.x = x * PX_SCALE # converts to same co-ord scale as mouse
         self.y = y * PX_SCALE
         self.width = width * PX_SCALE
-        self.player = player
-        self.insect = tilename.split('_')[0][:-1]
-        self.name = tilename
+
+        self.hive_tile = tile # points to HiveTile object
+        self.player = tile.player
+        self.insect = tile.name.split('_')[0][:-1]
+        self.name = tile.name
         self.board = board
 
 class ButtonPiece(PieceMixin):
