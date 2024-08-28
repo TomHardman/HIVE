@@ -24,6 +24,20 @@ class HiveTile: # parent class for all pieces
     def queen_placed(self):
         '''Returns True if queen has already been placed'''
         return self.board.pieces_remaining[self.player - 1]['queen'] == 0
+    
+    def check_slide_space(self, npos_arr, i):
+        """
+        Returns true if there is sufficient space to slide into empty tile at npos_arr[i].
+        """
+        if self.board.get_tile_stack(npos_arr[(i-1)%6]) == None or self.board.get_tile_stack(npos_arr[(i+1)%6]) == None:
+            return True
+        # need to make sure slide logic isn't being affected by current position of tile itself
+        elif len(self.board.get_tile_stack(npos_arr[(i-1)%6])) == 1 and self.board.get_tile_stack(npos_arr[(i-1)%6])[0] == self:
+            return True
+        elif len(self.board.get_tile_stack(npos_arr[(i+1)%6])) == 1 and self.board.get_tile_stack(npos_arr[(i+1)%6])[0] == self:
+            return True
+        return False
+        
 
 
 class Ant(HiveTile):
@@ -49,7 +63,7 @@ class Ant(HiveTile):
                 if npos_arr[i] not in seen:
                     if self.board.get_tile_stack(npos_arr[i]) == None: # if there is a space to move into
                         #   check adjacent neighbours to see if sliding is possible
-                        if self.board.get_tile_stack(npos_arr[(i-1)%6]) == None or self.board.get_tile_stack(npos_arr[(i+1)%6]) == None:
+                        if self.check_slide_space(npos_arr, i):
                             # check whether tile can be moved without breaking one-hive rule - this applies during move
                             if self.board.get_tile_stack(npos_arr[(i-1)%6]) != self.board.get_tile_stack(npos_arr[(i+1)%6]):
                                 self.board.move_tile(self, npos_arr[i])
@@ -80,7 +94,7 @@ class Beetle(HiveTile):
         for i in range(len(npos_arr)):
             if self.board.get_tile_stack(npos_arr[i]) == None:
                 # check adjacent neighbours to see if sliding is possible
-                if self.board.get_tile_stack(npos_arr[(i-1)%6]) == None or self.board.get_tile_stack(npos_arr[(i+1)%6]) == None:
+                if self.check_slide_space(npos_arr, i):
                     # check whether tile can be moved without breaking one-hive rule - this applies during move
                     if len(self.board.get_tile_stack(original_pos)) == 1:
                         if self.board.get_tile_stack(npos_arr[(i-1)%6]) != self.board.get_tile_stack(npos_arr[(i+1)%6]):
@@ -196,11 +210,11 @@ class Spider(HiveTile):
             for i in range(len(npos_arr)):
                 if npos_arr[i][0] not in seen:
                     if self.board.get_tile_stack(npos_arr[i][0]) == None: # if there is a space to move into
-                        #   check adjacent neighbours to see if sliding is possible
-                        if self.board.get_tile_stack(npos_arr[(i-1)%6][0]) == None or self.board.get_tile_stack(npos_arr[(i+1)%6][0]) == None:
+                        #   check adjacent neighbours to see if there is space to slide
+                        if self.check_slide_space(npos_arr, i):
                             # check whether tile can be moved without breaking one-hive rule - this applies during move
                             if self.board.get_tile_stack(npos_arr[(i-1)%6][0]) != self.board.get_tile_stack(npos_arr[(i+1)%6][0]):
-                                self.board.move_tile(self, npos_arr[i][0])
+                                self.board.move_tile(self, npos_arr[i][0]) 
                                 if not self.board.check_unconnected():
                                     if npos_arr[i][1] == 3: # spider must move exactly 3 spaces
                                         valid_moves.add(npos_arr[i][0])
