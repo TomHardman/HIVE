@@ -4,12 +4,14 @@ from board import ACTIONSPACE_INV
 """Random Agent to play HIVE"""
 
 class RandomAgent:
-    def __init__(self, board, player):
+    def __init__(self, player, board=None):
         self.player = player
         self.board = board
+    
+    def set_board(self, board):
+        self.board = board
 
-
-    def random_action(self):
+    def sample_action(self):
         """
         Get possible actions from board and randomly sample an action.
         Action space is represented as a dictionary mapping each board
@@ -48,9 +50,10 @@ class RandomAgent:
             
             return action
         
-        else:
+        else: # if no possible actions increment turn count and return False
+            self.board.player_turns[self.player-1] += 1
+            print('No possible actions for agent')
             return False
-
         
     
 

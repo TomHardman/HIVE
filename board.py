@@ -1,5 +1,6 @@
 from collections import defaultdict
 from pieces import Ant, Beetle, Grasshopper, Spider, Queen
+import copy
 
 
 ACTIONSPACE  = {'queen1': 0,
@@ -271,8 +272,10 @@ class HiveBoard():
                 
     
     def game_over(self):
-        '''Checks if the game is over (queen surrounded) and returns the player
-        number of the victor if so'''
+        """
+        Checks if the game is over due to one player surrounding the other's Queen or
+        a stalemate where neither play can move
+        """
         
         for i, pos in enumerate(self.queen_positions):
             if pos: # if queen has been placed
@@ -287,6 +290,12 @@ class HiveBoard():
                 
                 if surrounded: # return player number of opposing player if queen is surrounded
                     return 2 if i == 0 else 1
+        
+        p1_actions = self.get_legal_actions(1)
+        p2_actions = self.get_legal_actions(2)
+
+        if not any(p1_actions.values()) and not any(p2_actions.values()): # stalemate
+            return 0
         
         return False
     
@@ -320,7 +329,22 @@ class HiveBoard():
             legal_actions[pos] = moves
         
         return legal_actions
+    
+
+    def get_game_state(self, player):
+        """
+        Returns the current game state as a dictionary - to be used 
+        by the RL agent 
+        """
+        game_state = {'player1_hand': self.player1_hand.copy(),
+                      'player2_hand': self.player2_hand.copy(),
+                      'player_turns': self.player_turns.copy(),
+                      'queen_positions': copy.deepcopy(self.queen_positions),
+                      'tile_positions': copy.deepcopy(self.tile_positions),
+                      'valid_moves_p1': self.get_legal_actions(1),
+                      'valid_moves_p2': self.get_legal_actions(2),
+                      'winner': self.game_over(),
+                      'name_obj_mapping': self.name_obj_mapping}
+        return game_state
 
             
-            
-        

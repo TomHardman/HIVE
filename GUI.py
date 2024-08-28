@@ -15,13 +15,15 @@ import OpenGL.GL as gl
 from OpenGL import GLU
 
 from gui_pieces import BoardPiece, ButtonPiece
-from board import HiveBoard
+from board import HiveBoard, ACTIONSPACE, ACTIONSPACE_INV
 from drawing import draw_hexagon
 
 from PX_SCALE import PX_SCALE
 
+from rl_helper import ExperienceReplay, RewardCalculator, get_graph_from_state, REWARDS_DICT, Transition
+
 class HiveGUI(QtWidgets.QMainWindow):   
-    def __init__(self, board):
+    def __init__(self, board, rl_debug=False):
         super().__init__()
         self.resize(1000, 800)
         self.setWindowTitle('HIVE GUI')
@@ -42,6 +44,14 @@ class HiveGUI(QtWidgets.QMainWindow):
         # player attributes to store if a certain player is an artificial agent
         self.player1 = None
         self.player2 = None
+        self.p1_memory = [[self.board.get_game_state(1), None]] # store state action pairs for p1
+        self.p2_memory = [] # store state action pairs for p2
+
+        # RL debugging
+        self.rl_debug = rl_debug
+        if rl_debug:
+            self.replay = ExperienceReplay(capacity=1000) 
+            self.reward_calc = RewardCalculator(rewards_dict=REWARDS_DICT)
     
     def set_player(self, player, agent):
         if player == 1:
@@ -59,19 +69,20 @@ class HiveGUI(QtWidgets.QMainWindow):
         if self.player1 and self.player_turn==1:
             QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)
             time.sleep(1)
-            self.player1.random_action()
+            action = self.player1.sample_action()
             self.update_from_board()
+            self.update_memory(action)
         
         if self.player2 and self.player_turn==2:
             QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)
             time.sleep(1)
-            self.player2.random_action()
+            action = self.player2.sample_action()
             self.update_from_board()
+            self.update_memory(action)
         
         self.board_canvas.update()
         self.selection_canvas.update()
         self.check_game_over()
-
 
     @property
     def player_turn(self):
@@ -92,6 +103,18 @@ class HiveGUI(QtWidgets.QMainWindow):
                 tile_ht = tile_bp.tile # tile name of BoardPiece object
             assert (pos == tile_ht.position)
     
+    def update_memory(self, action):
+        """
+        Updates memory of state action pairs
+        """
+        if self.player_turn == 2: # player 1 has just been
+            self.p1_memory[-1][1] = action
+            self.p2_memory.append([self.board.get_game_state(2), None])
+        else: # player 2 has just been
+            self.p2_memory[-1][1] = action
+            self.p1_memory.append([self.board.get_game_state(1), None])
+            self.rl_update()
+
     def update_from_board(self):
         """
         Updates the board_canvas.tiles dictionary with the current state of the board
@@ -116,6 +139,20 @@ class HiveGUI(QtWidgets.QMainWindow):
                     self.board_canvas.tiles[pos].pop()
                     self.board_canvas.tiles[correct_pos].append((tile_bp, canvas_pos))
                     return # we should only ever have to update the position of one tile
+
+
+    def rl_update(self):
+        """
+        Update the replay memory with the current state of the board
+        """
+        if self.rl_debug:
+            s = get_graph_from_state(self.p1_memory[-2][0], 1)
+            s_prime = get_graph_from_state(self.p1_memory[-1][0], 1)
+            action = self.p1_memory[-2][1]
+            reward = self.reward_calc(1, self.p1_memory[-2][0], self.p1_memory[-1][0])
+            transition = Transition(s, action, reward, s_prime)
+            self.replay.push(transition)
+        print('rl update')
 
 
 class BoardCanvas(QtOpenGL.QGLWidget):
@@ -227,27 +264,33 @@ class BoardCanvas(QtOpenGL.QGLWidget):
     def mousePressEvent(self, event):
         if self.parent.moving_tile:
             if chosen_pos := self.valid_move_clicked(event.x(), event.y()):         
-                # Place tile in chosen position
                 tilename = self.parent.moving_tile.name
                 tile_object = self.parent.board.name_obj_mapping[tilename]
                 original_pos = tile_object.position
+                
+                # Place tile in chosen position
                 self.parent.board.move_tile(tile_object, chosen_pos, update_turns=True)
 
                 # Update self.tiles
                 canvas_pos = self.get_canvas_coords(chosen_pos)
                 self.tiles[chosen_pos].append((self.parent.moving_tile, canvas_pos))
                 self.tiles[original_pos].pop()
+
+                # update memory with action
+                tile_idx = ACTIONSPACE[tilename.split('_')[0]]
+                self.parent.update_memory((chosen_pos, tile_idx))
         
             self.parent.moving_tile = None
         
         elif self.parent.placing_tile:
             if chosen_pos := self.valid_placement_clicked(event.x(), event.y()):
-                # Place tile in chosen position
                 insect = self.parent.placing_tile.insect
                 player = self.parent.player_turn
                 tile_number = str(self.parent.pieces_remaining[player-1][insect])
                 tilename = insect + tile_number + '_p' + str(player)
                 tile_object = self.parent.board.name_obj_mapping[tilename]
+
+                # Place tile in chosen position
                 self.parent.board.place_tile(tile_object, chosen_pos)
 
                 # Render tile in chosen position
@@ -256,6 +299,10 @@ class BoardCanvas(QtOpenGL.QGLWidget):
                 self.tiles[chosen_pos].append((tile_bp, canvas_pos))
                 self.bp_tile_dict[tile_object] = tile_bp
 
+                # update memory with action
+                tile_idx = ACTIONSPACE[tilename.split('_')[0]]
+                self.parent.update_memory((chosen_pos, tile_idx))
+                
             self.parent.placing_tile = None
         
         else: # if not currently in moving or placing mode
