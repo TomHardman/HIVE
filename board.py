@@ -19,7 +19,7 @@ ACTIONSPACE_INV = {v: k for k, v in ACTIONSPACE.items()}
 
 
 class HiveBoard():
-    def __init__(self) -> None:
+    def __init__(self, max_turns=None) -> None:
         self.tile_positions  = defaultdict(list) # mapping from board position to tile objects
         self.name_obj_mapping = {} # mapping from tile name to object
         
@@ -40,6 +40,10 @@ class HiveBoard():
 
         # initialise booleans to store queen positions
         self.queen_positions = [None, None]
+
+        # to stop game after certain number of turns
+        self.max_turns = max_turns
+
     
     def get_player_turn(self):
         if self.player_turns[0] == self.player_turns[1]:
@@ -177,13 +181,19 @@ class HiveBoard():
         
         return valid_placements
     
-    def check_unconnected(self):
+    def check_unconnected(self, dummy_pos=None):
         """
         Returns True if the board is in an unconnected state, False otherwise.
         Performs a depth-first search to check if all tiles are connected.
+        When dummy_pos is provided, this is when a piece is being moved to a
+        very far away dummy position to check if its removal breaks the hive.
+        In this scenario we don't want to begin our dfs from the dummy position
+        and must account for it when checking connectedness.
         """
         seen = set()
         stack = [list(self.tile_positions.keys())[0]] # start search from a single position
+        if stack[0] == dummy_pos:
+            stack = [list(self.tile_positions.keys())[1]]
         connected = False
         
         while stack:
@@ -197,6 +207,9 @@ class HiveBoard():
                     stack.append(npos)
         
         if len(seen) == len(self.tile_positions):
+            connected = True
+        
+        elif dummy_pos and len(seen) == len(self.tile_positions) - 1:
             connected = True
         
         return not connected
@@ -276,9 +289,12 @@ class HiveBoard():
         Checks if the game is over due to one player surrounding the other's Queen or
         a stalemate where neither play can move
         """
+        surrounding = [0, 0] # pieces surround p1 queen and p2 queen
+        surrounded = False
         
         for i, pos in enumerate(self.queen_positions):
             if pos: # if queen has been placed
+                pieces_surrounding = 6
                 npos_arr = [(pos[0], pos[1]+1), (pos[0]+1, pos[1]), (pos[0]+1, pos[1]-1), 
                             (pos[0], pos[1]-1), (pos[0]-1, pos[1]), (pos[0]-1, pos[1]+1)]
                 
@@ -286,17 +302,21 @@ class HiveBoard():
                 for npos in npos_arr:
                     if self.get_tile_stack(npos) == None:
                         surrounded = False
-                        break
+                        pieces_surrounding -= 1
                 
-                if surrounded: # return player number of opposing player if queen is surrounded
-                    return 2 if i == 0 else 1
-        
-        p1_actions = self.get_legal_actions(1)
-        p2_actions = self.get_legal_actions(2)
+                surrounding[i] = pieces_surrounding
+                
+            if surrounded: # return player number of opposing player if queen is surrounded
+                return 2 if i == 0 else 1
+                
+        if self.max_turns and self.player_turns[0] >= self.max_turns and self.player_turns[1] >= self.max_turns:
+            if surrounding[0] > surrounding[1]:
+                return 1
+            elif surrounding[0] < surrounding[1]:
+                return 2
+            else:
+                return f'Draw {surrounding[0]}, {surrounding[1]}'
 
-        if not any(p1_actions.values()) and not any(p2_actions.values()): # stalemate
-            return 0
-        
         return False
     
 
@@ -336,15 +356,30 @@ class HiveBoard():
         Returns the current game state as a dictionary - to be used 
         by the RL agent 
         """
-        game_state = {'player1_hand': self.player1_hand.copy(),
-                      'player2_hand': self.player2_hand.copy(),
-                      'player_turns': self.player_turns.copy(),
+
+        game_state = {'player_turns': self.player_turns.copy(),
                       'queen_positions': copy.deepcopy(self.queen_positions),
                       'tile_positions': copy.deepcopy(self.tile_positions),
                       'valid_moves_p1': self.get_legal_actions(1),
                       'valid_moves_p2': self.get_legal_actions(2),
-                      'winner': self.game_over(),
-                      'name_obj_mapping': self.name_obj_mapping}
+                      'winner': self.game_over()}
+
+        # Record in terms of indexes relating to tile position - this avoids having to reference tile objects
+        idx_pos_mapping= {}
+        for pos, tiles in self.tile_positions.items():
+            for tile in tiles:
+                idx = ACTIONSPACE[tile.name.split('_')[0]]
+                if tile.player != player:
+                    idx = idx + 11
+                idx_pos_mapping[idx] = pos
+
+        p1_hand = [ACTIONSPACE[tile.name.split('_')[0]] for tile in self.player1_hand]
+        p2_hand = [ACTIONSPACE[tile.name.split('_')[0]] for tile in self.player2_hand]
+
+        game_state['player1_hand'] = p1_hand
+        game_state['player2_hand'] = p2_hand
+        game_state['idx_pos_mapping'] = idx_pos_mapping
+
         return game_state
 
             
