@@ -27,7 +27,8 @@ class HiveTile: # parent class for all pieces
     
     def check_slide_space(self, npos_arr, i):
         """
-        Returns true if there is sufficient space to slide into empty tile at npos_arr[i].
+        Returns true if there is sufficient space to slide into empty tile at npos_arr[i], where
+        npos_arr is array of neighbouring positions to tile, represented clockwise from 12 o'clock
         """
         if self.board.get_tile_stack(npos_arr[(i-1)%6]) == None or self.board.get_tile_stack(npos_arr[(i+1)%6]) == None:
             return True
@@ -37,7 +38,6 @@ class HiveTile: # parent class for all pieces
         elif len(self.board.get_tile_stack(npos_arr[(i+1)%6])) == 1 and self.board.get_tile_stack(npos_arr[(i+1)%6])[0] == self:
             return True
         return False
-        
 
 
 class Ant(HiveTile):
@@ -47,11 +47,17 @@ class Ant(HiveTile):
     def get_valid_moves(self):
         if self.covered() or not self.queen_placed():
             return set()
-        
-        seen = set()
-        valid_moves = set()
 
         original_pos = self.position
+
+        self.board.move_tile(self, (100, 100)) # test if removing from original pos breaks hive
+        if self.board.check_unconnected(dummy_pos=(100, 100)):
+            self.board.move_tile(self, original_pos)
+            return set()
+        self.board.move_tile(self, original_pos)
+
+        seen = set()
+        valid_moves = set()
         bfs_queue = deque([original_pos])
 
         while bfs_queue:
@@ -136,8 +142,8 @@ class Grasshopper(HiveTile):
         
         original_pos = self.position
         
-        self.board.move_tile(self, (0, 0)) # test if removing from original pos breaks hive
-        if self.board.check_unconnected():
+        self.board.move_tile(self, (100, 100)) # test if removing from original pos breaks hive
+        if self.board.check_unconnected(dummy_pos=(100, 100)):
             self.board.move_tile(self, original_pos)
             return set()
         self.board.move_tile(self, original_pos)
@@ -195,11 +201,17 @@ class Spider(HiveTile):
     def get_valid_moves(self):
         if self.covered() or not self.queen_placed():
                 return set()
+        
+        original_pos = self.position
+        
+        self.board.move_tile(self, (100, 100)) # test if removing from original pos breaks hive
+        if self.board.check_unconnected(dummy_pos=(100, 100)):
+            self.board.move_tile(self, original_pos)
+            return set()
+        self.board.move_tile(self, original_pos)
             
         seen = set([self.position])
         valid_moves = set()
-
-        original_pos = self.position
         bfs_queue = deque([(original_pos, 0)])
 
         while bfs_queue:
