@@ -152,7 +152,6 @@ class HiveGUI(QtWidgets.QMainWindow):
             reward = self.reward_calc(1, self.p1_memory[-2][0], self.p1_memory[-1][0])
             transition = Transition(s, action, reward, s_prime)
             self.replay.push(transition)
-        print('rl update')
 
 
 class BoardCanvas(QtOpenGL.QGLWidget):
@@ -163,8 +162,11 @@ class BoardCanvas(QtOpenGL.QGLWidget):
         # mouse position
         self.setMouseTracking(True)  # Enable mouse tracking
         self.contains_mouse = False
+        self.dragging = False
         self.mouse_x = 0
         self.mouse_y = 0
+        self.pan_x = 0
+        self.pan_y = 0
 
         self.tiles = defaultdict(list) # dictionary mapping board co-ordinate to BoardPiece object and canvas position
         self.bp_tile_dict = defaultdict(list) # dictionary mapping HiveTile object to BoardPiece object
@@ -177,7 +179,6 @@ class BoardCanvas(QtOpenGL.QGLWidget):
         gl.glViewport(0, 0, width, height)
         gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glLoadIdentity()
-        aspect = width / float(height)
 
         GLU.gluOrtho2D(0, width, 0, height)
         gl.glMatrixMode(gl.GL_MODELVIEW)
@@ -197,7 +198,7 @@ class BoardCanvas(QtOpenGL.QGLWidget):
                     if self.parent.moving_tile and tile == self.parent.moving_tile:
                         pass
                     else:
-                        tile.render(canvas_pos[0], canvas_pos[1])
+                        tile.render(canvas_pos[0] - self.pan_x, canvas_pos[1] + self.pan_y)
         
         if self.parent.placing_tile:
             self.display_valid_moves()
@@ -220,7 +221,8 @@ class BoardCanvas(QtOpenGL.QGLWidget):
             for pos in valid_placements:
                 board_pos = self.get_canvas_coords(pos)
                 gl.glColor3f(0.0, 1.0, 0.0)  # Green
-                draw_hexagon(board_pos[0] * PX_SCALE, board_pos[1] * PX_SCALE, 
+                draw_hexagon((board_pos[0] - self.pan_x) * PX_SCALE, 
+                             (board_pos[1] + self.pan_y) * PX_SCALE, 
                              99 * PX_SCALE, fill=False)
                 
         if self.parent.moving_tile:
@@ -231,7 +233,8 @@ class BoardCanvas(QtOpenGL.QGLWidget):
             for pos in valid_moves:
                 board_pos = self.get_canvas_coords(pos)
                 gl.glColor3f(0.0, 1.0, 0.0)  # Green
-                draw_hexagon(board_pos[0] * PX_SCALE, board_pos[1] * PX_SCALE, 
+                draw_hexagon((board_pos[0] - self.pan_x) * PX_SCALE, 
+                             (board_pos[1] + self.pan_y) * PX_SCALE, 
                              99 * PX_SCALE, fill=False)
     
     def get_canvas_coords(self, board_pos):
@@ -250,6 +253,12 @@ class BoardCanvas(QtOpenGL.QGLWidget):
         return canvas_pos
 
     def mouseMoveEvent(self, event):
+        if self.dragging:
+            delta_x = self.mouse_x - event.x()
+            delta_y = self.mouse_y - event.y()
+            self.pan_x += delta_x
+            self.pan_y += delta_y
+
         # Update mouse position
         self.mouse_x = event.x()
         self.mouse_y = event.y()
@@ -263,7 +272,8 @@ class BoardCanvas(QtOpenGL.QGLWidget):
     
     def mousePressEvent(self, event):
         if self.parent.moving_tile:
-            if chosen_pos := self.valid_move_clicked(event.x(), event.y()):         
+            if chosen_pos := self.valid_move_clicked(event.x()+self.pan_x, 
+                                                     event.y()+self.pan_y):         
                 tilename = self.parent.moving_tile.name
                 tile_object = self.parent.board.name_obj_mapping[tilename]
                 original_pos = tile_object.position
@@ -283,7 +293,8 @@ class BoardCanvas(QtOpenGL.QGLWidget):
             self.parent.moving_tile = None
         
         elif self.parent.placing_tile:
-            if chosen_pos := self.valid_placement_clicked(event.x(), event.y()):
+            if chosen_pos := self.valid_placement_clicked(event.x()+self.pan_x, 
+                                                          event.y()+self.pan_y):
                 insect = self.parent.placing_tile.insect
                 player = self.parent.player_turn
                 tile_number = str(self.parent.pieces_remaining[player-1][insect])
@@ -306,10 +317,17 @@ class BoardCanvas(QtOpenGL.QGLWidget):
             self.parent.placing_tile = None
         
         else: # if not currently in moving or placing mode
-            if tile_clicked := self.get_tile_clicked(event.x(), event.y()):
+            if tile_clicked := self.get_tile_clicked(event.x() + self.pan_x,
+                                                     event.y() + self.pan_y):
                 self.parent.moving_tile = tile_clicked
+
+            self.dragging = True
                 
         self.parent.update_GUI()
+
+    def mouseReleaseEvent(self, event):
+        self.dragging = False
+
 
     def get_tile_clicked(self, x, y):
         """If a valid tile is clicked and can be moved returns the BoardPiece object for tile"""
