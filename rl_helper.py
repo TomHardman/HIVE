@@ -7,11 +7,13 @@ import random
 
 from board import ACTIONSPACE, ACTIONSPACE_INV
 
-REWARDS_DICT = {'queen_ownership': 2,
+REWARDS_DICT = {'queen_ownership': 1,
                 'queen_surrounding': 1,
-                'change_in_moves': 0.01,
-                'change_moveable_pieces': 0.2,
+                'change_in_moves': 0,
+                'change_moveable_pieces': 0,
                 'win_lose': 10}
+
+REDUCED_MAPPING = {'queen': 0, 'beetle': 1, 'ant': 2, 'grasshopper': 3, 'spider': 4}
 
 class RewardCalculator:
     def __init__(self, rewards_dict: dict):
@@ -143,7 +145,8 @@ class RewardCalculator:
 
         for key in self.rewards_dict.keys():
             reward += self.rewards_dict[key] * getattr(self, 'reward_' + key)(player, s, s_prime)
-            print(key, getattr(self, 'reward_' + key)(player, s, s_prime), self.rewards_dict[key] * getattr(self, 'reward_' + key)(player, s, s_prime))
+            #print(key, getattr(self, 'reward_' + key)(player, s, s_prime), self.rewards_dict[key] * getattr(self, 'reward_' + key)(player, s, s_prime))
+        #print(f'Reward {reward}')
         return reward
     
     def __call__(self, player, s, s_prime):
@@ -185,29 +188,45 @@ class ExperienceReplay:
         return len(self.memory)
 
 
-def get_graph_from_state(state, player) -> tuple[Data, torch.Tensor, torch.Tensor]:
+def get_graph_from_state(state, player, reduced=False) -> GraphState:
     """
-    Returns a GraphState object containingf the state of the board that can be processed by agent.
+    Returns a GraphState object containing the state of the board that can be processed by agent.
     Consists of  PyTorch Geometric Data object representing the board state in graph
     form, a global feature vector containing info about the no. pieces in each hand, a
     mask representing the valid actions for each node in the graph and a mapping of board
-    positions to graph nodes. 
-    Each node is a 24d feature vector representing either a tile on the board or
-    a possible space that could be moved into. The feature vector is one hot encoded
-    with the pieces currently residing in the tile. The first 11 slots represent the
-    pieces for the current player and last 11 slots represent the pieces for the opposition.
-    The 23rd slot is used to indicate if the node is actually an empty space that can be
-    moved into. The 24th slot is used to indicate if the slot can be used for tile placement:
-    +1 indicates it can be used by the current player and -1 indicates it can be used by
-    the opposition player. The edges represent possible moves or simply adjacency between tiles.
-    Each edge is a 1d feature vector with +1 indicating adjacency and -1 indicating a
+    positions to graph nodes so that actions can be correctly understood.
+
+    Each node is a length d feature vector representing either a tile on the board or
+    a possible space that could be moved into. There are two options for the feature vector:
+    - one hot encode first 5 positions with type of tile (reduced = True)
+    - one hot encode first 11 positions with the specific tile in each piece
+
+    The next 5 / 11 slots represent the same encoding for the opposing player.
+
+    Following the last 3 slots are used as follows: 
+    -3 slot: 1 if the node is actually an empty space that can be moved into
+    -2 slot: 1 if the node is a valid tile placement for the current player and -1 for opposition
+    -1 slot: 1 if the node is 'owned by the current player' -1 if not (e.g if enemy player has 
+             beetle on top of current player's piece this node is not owned by the current player)
+
+    The edges represent possible moves or simply adjacency between tiles.
+    Each edge is a 1d feature vector with 0 indicating adjacency and 1 indicating a
     possible move. A 22d global feature vector representing the number of pieces in the current
-    player's hand and the opposing player's hand is then used.
+    player's hand and the opposing player's hand is then also supplied. This can be combined into
+    the network at an intermediate point.
+
+    Action space is represented by length 11 vector at each node representing the possible actions
+    of moving a piece to that node.
     """
-    node_features = [[0 for i in range(24)]]
+    if reduced == True:
+        n = 13
+    else:
+        n = 25
+
+    node_features = [[0 for i in range(n)]]
     edges = [[],[]]
     edge_features = []
-    action_mask = [[0 for i in range(11)]] # initialise action mask at 0,0
+    action_mask = [[0 for i in range(11)]] # initialise action mask for first position
     global_feature_vector = [0 for i in range(22)]
 
     if state['tile_positions']:
@@ -226,19 +245,33 @@ def get_graph_from_state(state, player) -> tuple[Data, torch.Tensor, torch.Tenso
         if not tiles:
             break
         for tile in tiles: # iterate through HiveTile objects at location
-            piece_id = tile.name.split('_')[0]
-            idx = ACTIONSPACE.get(piece_id) 
-            if tile.player == player:
-                node_features[pos_node_mapping[pos]][idx] = 1
+            if not reduced:
+                piece_id = tile.name.split('_')[0]
+                idx = ACTIONSPACE.get(piece_id) 
+                if tile.player == player:
+                    node_features[pos_node_mapping[pos]][idx] = 1
+                else:
+                    node_features[pos_node_mapping[pos]][idx + 11] = 1
             else:
-                node_features[pos_node_mapping[pos]][idx + 11] = 1
+                piece_id_red = tile.name.split('_')[0][:-1]
+                idx = REDUCED_MAPPING.get(piece_id_red)
+                if tile.player == player:
+                    node_features[pos_node_mapping[pos]][idx] += 1
+                else:
+                    node_features[pos_node_mapping[pos]][idx + 5] += 1
+            
+            if tile == tiles[-1]:
+                if tile.player == player:
+                    node_features[pos_node_mapping[pos]][-1] = 1
+                else:
+                    node_features[pos_node_mapping[pos]][-1] = -1
         
         npos_arr = [(pos[0], pos[1] + 1), (pos[0] + 1, pos[1]), (pos[0] + 1, pos[1] - 1),
                     (pos[0], pos[1] - 1), (pos[0] - 1, pos[1]), (pos[0] - 1, pos[1] + 1)]
         
         for npos in npos_arr:
             if npos not in pos_node_mapping:
-                node_features.append([0 for i in range(24)])
+                node_features.append([0 for i in range(n)])
                 action_mask.append([0 for i in range(11)]) # no valid actions for tile nodes
                 pos_node_mapping[npos] = node_idx
                 node_idx += 1
@@ -249,11 +282,18 @@ def get_graph_from_state(state, player) -> tuple[Data, torch.Tensor, torch.Tenso
             # create bidirectional edge between nodes
             edges[0].append(pos_node_mapping[pos])
             edges[1].append(pos_node_mapping[npos])
-            edge_features.append([1])
+            edge_features.append([0])
 
             edges[0].append(pos_node_mapping[npos])
             edges[1].append(pos_node_mapping[pos])
-            edge_features.append([1])
+            edge_features.append([0])
+    
+    for tile_pos in state['tile_positions']:
+        try:
+            assert(tile_pos in pos_node_mapping)
+            assert(state['tile_positions'][tile_pos][-1].position == tile_pos)
+        except AssertionError:
+            raise AssertionError(f'Position {tile_pos} not in pos_node_mapping or tile not at top of')
 
     # add nodes for possible tile placements for self and opp
     for p in [player, 3 - player]:
@@ -262,41 +302,45 @@ def get_graph_from_state(state, player) -> tuple[Data, torch.Tensor, torch.Tenso
             if pos not in pos_node_mapping:
                 action_mask.append([0 for i in range(11)])
                 pos_node_mapping[pos] = node_idx
-                node_features.append([0 for i in range(24)])
+                node_features.append([0 for i in range(n)])
                 node_idx += 1
             
-            node_features[pos_node_mapping[pos]][22] = 1 # tile can be used for placement
+            node_features[pos_node_mapping[pos]][-3] = 1 # encode empty space
             
             for idx, valid in enumerate(valid_moves[pos]):
                 if valid:
-                    action_mask[pos_node_mapping[pos]][idx] = 1 # valid action in action space
-                    piece_id = ACTIONSPACE_INV[idx]
-                    tile_name = piece_id + '_p' + str(p)
-                    tile_obj = state['name_obj_mapping'][tile_name]
+                    if p == player:
+                        action_mask[pos_node_mapping[pos]][idx] = 1 # valid action in action space
+                    
                     player_hand = state[f'player{p}_hand']
                     
                     tile_placed = True
-                    if tile_obj in player_hand:
+                    if idx in player_hand:
                         tile_placed=False
                     
                     if not tile_placed:
                         if pos != (0, 0):
-                        # add bidirectional edge to represent tile adjacency
+                            # encoding valid placement
                             if p == player:
-                                node_features[pos_node_mapping[pos]][23] = 1
+                                node_features[pos_node_mapping[pos]][-2] = 1
                             else:
-                                node_features[pos_node_mapping[pos]][23] = -1
+                                node_features[pos_node_mapping[pos]][-2] = -1
 
                     else:
                         # add unidirectional edge to represent move
-                        edges[0].append(pos_node_mapping[tile_obj.position])
+                        if p != player:
+                            idx = idx + 11 
+                        tile_pos = state['idx_pos_mapping'][idx]
+                        try:
+                            edges[0].append(pos_node_mapping[tile_pos])
+                        except KeyError:
+                            raise KeyError(f'Position {tile_pos} not in pos_node_mapping')
                         edges[1].append(pos_node_mapping[pos])
-                        edge_features.append([-1])
+                        edge_features.append([2])
 
         # create global feature vector representing player hands
         player_hand = state[f'player{p}_hand']
-        for tile in player_hand:
-            idx = ACTIONSPACE.get(tile.name.split('_')[0])
+        for idx in player_hand:
             if p == player:
                 global_feature_vector[idx] += 1
             else:
