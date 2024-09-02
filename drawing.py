@@ -106,7 +106,6 @@ def draw_ant(x0, y0, width):
 
 
 def draw_spider(x0, y0, width):
-    # Draw some text
     glColor3f(0.48, 0.25, 0.07)  # Brown color for the text
     segment_radius = width / 7
     draw_ellipse(x0, y0, 0.75*segment_radius, segment_radius)
@@ -156,18 +155,113 @@ def draw_spider(x0, y0, width):
     glVertex2f(x0 - width/6, y0 - width/3.2)
     glEnd()
 
+    glLineWidth(1.0)
 
 
 def draw_grasshopper(x0, y0, width):
-    # Draw some text
-    glColor3f(0.2, 0.9, 0.3)  # Green color for the text
-    draw_text(x0 - width*0.45, y0, "Grasshopper")
+    glColor3f(0.13, 0.7, 0.1)  # Green color
+
+    glBegin(GL_POLYGON)
+    glVertex2f(x0 + width/6, y0)
+    glVertex2f(x0 + width/12, y0 + width/4)
+    glVertex2f(x0 - width/12, y0 + width/4)
+    glVertex2f(x0 - width/6, y0)
+    glVertex2f(x0 - width/11, y0-width/3)
+    glVertex2f(x0 + width/11, y0-width/3)
+    glVertex2f(x0 + width/6, y0)
+    glEnd()
+
+    draw_ellipse(x0, y0+width/4, h_rad=width/12, v_rad=width/18)
+    draw_ellipse(x0, y0-width/3, h_rad=width/11, v_rad=width/18)
+
+    # antennae
+    glLineWidth(2.0 * PX_SCALE)
+    glBegin(GL_LINES)
+    glVertex2f(x0, y0+width/4)
+    glVertex2f(x0 + width/12, y0 + width/2.4)
+    glVertex2f(x0, y0+width/4)
+    glVertex2f(x0 - width/12, y0 + width/2.4)
+    glEnd()
+
+    # top legs
+    glBegin(GL_LINES)
+    glVertex2f(x0, y0+width/7)
+    glVertex2f(x0-width/5, y0+width/6.5)
+    glVertex2f(x0-width/5, y0+width/6.5)
+    glVertex2f(x0-width/4, y0+width/4)
+
+    glVertex2f(x0, y0+width/7)
+    glVertex2f(x0+width/5, y0+width/6.5)
+    glVertex2f(x0+width/5, y0+width/6.5)
+    glVertex2f(x0+width/4, y0+width/4)
+
+    glVertex2f(x0, y0+width/10)
+    glVertex2f(x0-width/5, y0+width/10.5)
+    glVertex2f(x0-width/5, y0+width/10.5)
+    glVertex2f(x0-width/4, y0)
+    
+    glVertex2f(x0, y0+width/10)
+    glVertex2f(x0+width/5, y0+width/10.5)
+    glVertex2f(x0+width/5, y0+width/10.5)
+    glVertex2f(x0+width/4, y0)
+    glEnd()
+
+    # bottom legs
+    glBegin(GL_LINES)
+    glVertex2f(x0, y0-width/7)
+    glVertex2f(x0-width/5, y0)
+    glVertex2f(x0-width/5, y0)
+    glVertex2f(x0-width/4, y0-width/2.7)
+
+    glVertex2f(x0, y0-width/7)
+    glVertex2f(x0+width/5, y0)
+    glVertex2f(x0+width/5, y0)
+    glVertex2f(x0+width/4, y0-width/2.7)
+    glEnd()
 
 
 def draw_beetle(x0, y0, width):
-    # Draw some text
-    glColor3f(1.0, 0.0, 1.0)  # Purple color for the text
-    draw_text(x0 - width*0.25, y0, "Beetle")
+    glColor3f(0.8, 0, 1.0)  # Green color for the text
+    segment_radius = width / 4.2
+
+    # body and head
+    draw_ellipse(x0, y0-width/15, 0.75*segment_radius, segment_radius)
+    draw_ellipse(x0, y0 + 0.18*width, h_rad=width/9, v_rad=width/11)
+
+    # pincers
+    glBegin(GL_POLYGON)
+    glVertex2f(x0, y0+3*width/15)
+    glVertex2f(x0+width/14, y0+5*width/15)
+    glVertex2f(x0+width/10, y0+2*width/15)
+    glVertex2f(x0, y0+3*width/15)
+    glVertex2f(x0-width/14, y0+5*width/15)
+    glVertex2f(x0-width/10, y0+2*width/15)
+    glVertex2f(x0, y0+4*width/15)
+    glEnd()
+
+
+    # middle legs
+    glLineWidth(2.0 * PX_SCALE)
+    glBegin(GL_LINES)
+    glVertex2f(x0, y0-width/15)
+    glVertex2f(x0 - width/2.7, y0-width/15)
+    glVertex2f(x0, y0-width/15)
+    glVertex2f(x0 + width/2.7, y0-width/15)
+
+    # top legs
+    glVertex2f(x0, y0-width/15)
+    glVertex2f(x0 - width/3.3, y0+3*width/15)
+    glVertex2f(x0, y0-width/15)
+    glVertex2f(x0 + width/3.3, y0+3*width/15)
+
+    # bottom legs
+    glVertex2f(x0, y0-width/15)
+    glVertex2f(x0 - width/3.3, y0-5*width/15)
+    glVertex2f(x0, y0-width/15)
+    glVertex2f(x0 + width/3.3, y0-5*width/15)
+    glEnd()
+    glLineWidth(1.0)
+
 
 
 def draw_queen(x0, y0, width):
@@ -182,7 +276,7 @@ def draw_queen(x0, y0, width):
     draw_ellipse(x0, y0 - 0.05*width, h_rad=width/7, v_rad=width/5)
     draw_ellipse(x0, y0 + 0.16*width, h_rad=width/12, v_rad=width/18)
 
-    glLineWidth(2.0)
+    glLineWidth(2.0*PX_SCALE)
     glBegin(GL_LINES)
 
     # Lower legs
