@@ -19,7 +19,7 @@ ACTIONSPACE_INV = {v: k for k, v in ACTIONSPACE.items()}
 
 
 class HiveBoard():
-    def __init__(self, max_turns=None) -> None:
+    def __init__(self, max_turns=None, simplified_game=False) -> None:
         self.tile_positions  = defaultdict(list) # mapping from board position to tile objects
         self.name_obj_mapping = {} # mapping from tile name to object
         
@@ -43,6 +43,9 @@ class HiveBoard():
 
         # to stop game after certain number of turns
         self.max_turns = max_turns
+
+        # ends game once player gets two pieces around opposing queen
+        self.simplified_game = simplified_game
 
     
     def get_player_turn(self):
@@ -287,7 +290,7 @@ class HiveBoard():
     def game_over(self):
         """
         Checks if the game is over due to one player surrounding the other's Queen or
-        a stalemate where neither play can move
+        a stalemate where neither play can move 
         """
         surrounding = [0, 0] # pieces surround p1 queen and p2 queen
         surrounded = False
@@ -308,6 +311,12 @@ class HiveBoard():
                 
             if surrounded: # return player number of opposing player if queen is surrounded
                 return 2 if i == 0 else 1
+        
+        if self.simplified_game:
+            if surrounding[0] >= 3 and 3 > surrounding[1]:
+                return 1
+            elif surrounding[1] >= 3 and 3 > surrounding[0]:
+                return 2
                 
         if self.max_turns and self.player_turns[0] >= self.max_turns and self.player_turns[1] >= self.max_turns:
             if surrounding[0] > surrounding[1]:

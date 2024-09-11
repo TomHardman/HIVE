@@ -1,25 +1,53 @@
 import torch
 from torch_geometric.data import Data
+from torch.utils.data import Dataset
+from torch_geometric.loader import DataLoader
 
 from collections import deque
 from dataclasses import dataclass
 import random
 
+import matplotlib.pyplot as plt
+
 from board import ACTIONSPACE, ACTIONSPACE_INV
 
-REWARDS_DICT = {'queen_ownership': 1,
+REWARDS_DICT = {'queen_ownership': 0,
                 'queen_surrounding': 1,
                 'change_in_moves': 0,
                 'change_moveable_pieces': 0,
-                'win_lose': 10}
+                'win_lose': 0}
 
 REDUCED_MAPPING = {'queen': 0, 'beetle': 1, 'ant': 2, 'grasshopper': 3, 'spider': 4}
+
+
+class LossBuffer:
+    def __init__(self) -> None:
+        self.memory = []
+        self.avg = 0
+
+    def push(self, loss):
+        if loss == None:
+            return
+        
+        self.memory.append(loss)
+        self.avg = self.avg * (len(self) - 1)/len(self) + loss/len(self)
+
+        if len(self.memory) % 1000 == 0:
+            self.plot_loss(len(self.memory))
+    
+    def plot_loss(self, iters):
+        plt.plot(self.memory)
+        plt.savefig(f'loss_plots/loss_{iters}.png')
+    
+    def __len__(self):
+        return len(self.memory)
+
 
 class RewardCalculator:
     def __init__(self, rewards_dict: dict):
         self.rewards_dict = rewards_dict
 
-    def pieces_around_queen(self, player, state):
+    def pieces_around_queen(self, player, state, opp=False):
         """
         Returns the number of pieces around the queen of the given player
         in state s
@@ -38,7 +66,11 @@ class RewardCalculator:
         pieces_around_queen = 0
         for pos in npos_arr:
             if state['tile_positions'].get(pos):
-                pieces_around_queen += 1
+                if opp:
+                    if state['tile_positions'][pos][-1].player != player:
+                        pieces_around_queen += 1
+                if not opp:
+                    pieces_around_queen += 1
         return pieces_around_queen
     
     def queen_ownership(self, player, state):
@@ -67,7 +99,7 @@ class RewardCalculator:
 
     def reward_queen_surrounding(self, player, s, s_prime):
         """
-        If player manages to increase number of pieces around opposition's
+        If player manages to increase number of (own) pieces around opposition's
         queen between s and s_prime, positive reward is given - vice versa
         for decrease. If player's own queen has more pieces around it in s_prime,
         negative reward is given and vice versa.
@@ -76,10 +108,11 @@ class RewardCalculator:
 
         n_s_self = self.pieces_around_queen(player, s)
         n_s_prime_self = self.pieces_around_queen(player, s_prime)
-        n_s_opp = self.pieces_around_queen(opp, s)
-        n_s_prime_opp = self.pieces_around_queen(opp, s_prime)
+        n_s_opp = self.pieces_around_queen(opp, s, opp=True)
+        n_s_prime_opp = self.pieces_around_queen(opp, s_prime, opp=True)
 
-        return (n_s_prime_opp - n_s_opp) - (n_s_prime_self - n_s_self)
+        #return (n_s_prime_opp - n_s_opp) - (n_s_prime_self - n_s_self)
+        return (n_s_prime_opp - n_s_opp)
 
     def reward_change_in_moves(self, player, s, s_prime):
         """
@@ -163,26 +196,44 @@ class GraphState:
 
 @dataclass
 class Transition:
-    s: GraphState
-    s_prime: GraphState
+    s: Data
+    s_prime: Data
     action: tuple[tuple[int, int], int]
     reward : float # reward from taking action a in state s
+    done : bool = False # whether the game is over
+
+
+class TransitionDataLoader():
+    def __init__(self, transitions):
+        for transition in transitions:
+            gs = transition.s
+        
+    
+    def __len__(self):
+        return
+    
+    def __getitem__(self, idx):
+        return
 
 
 class ExperienceReplay:
     def __init__(self, capacity):
         self.capacity = capacity
         self.memory = [] # ring buffer for O(1) sampling and appending
+        self.reward_memory = [] # only remembers experiences with rewards
         self.position = 0
 
     def push(self, transition: Transition):
         if len(self.memory) < self.capacity:
             self.memory.append(None)
         self.memory[self.position] = transition
+        if transition.reward != 0:
+            self.reward_memory.append(transition)
         self.position = (self.position + 1) % self.capacity
 
     def sample(self, batch_size):
-        return random.sample(self.memory, batch_size)
+        sample = random.sample(self.memory, batch_size//2) + random.sample(self.reward_memory, min(batch_size//2, len(self.reward_memory)))
+        return sample
 
     def __len__(self):
         return len(self.memory)
@@ -352,4 +403,6 @@ def get_graph_from_state(state, player, reduced=False) -> GraphState:
     edge_attr = torch.tensor(edge_features, dtype=torch.float)
     u = torch.tensor(global_feature_vector, dtype=torch.float)
     action_mask = torch.tensor(action_mask, dtype=torch.int)
-    return GraphState(Data(x=x, edge_index=edge_index, edge_attr=edge_attr, u=u), u, action_mask, pos_node_mapping)
+    return Data(x=x, edge_index=edge_index, edge_attr=edge_attr,
+                u=u, action_mask=action_mask, pos_node_mapping=pos_node_mapping,
+                queen_positions=state['queen_positions'])

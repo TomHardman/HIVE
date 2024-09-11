@@ -1,15 +1,16 @@
 import torch
 import torch.nn.functional as F
 
-from torch_geometric.nn import GCNConv
+from torch_geometric.nn import GCNConv, GATConv
 from torch_geometric.data import Data, Batch
+from torch_geometric.loader import DataLoader
 
 from rl_helper import GraphState
 
 from torch_geometric.utils import add_self_loops, degree
 
 class DQN(torch.nn.Module):
-    def __init__(self, input_dim, hidden_dim=22, output_dim=11):
+    def __init__(self, input_dim, hidden_dim=22, output_dim=11, alt=False):
         super().__init__()
         self.conv1 = GCNConv(input_dim, hidden_dim, add_self_loops=True)
         self.conv2 = GCNConv(hidden_dim, hidden_dim, add_self_loops=True)
@@ -17,12 +18,13 @@ class DQN(torch.nn.Module):
         self.conv4 = GCNConv(hidden_dim, output_dim, add_self_loops=True)
         self.linear = torch.nn.Linear(22, hidden_dim)
 
-    def forward(self, gs : GraphState):
-        data = gs.data # gets PyTorch Geometric Data object
-        x, edge_index, edge_attr = data.x, data.edge_index, data.edge_attr
-
-        u = gs.global_feature_vector
-        action_mask = gs.action_mask
+        self.alt = alt
+        self.linear_alt = torch.nn.Linear(11, 1)
+    
+    def forward_batch(self, batch):
+        x, edge_index, edge_attr = batch.x, batch.edge_index, batch.edge_attr
+        u = batch.global_feature_vector
+        action_mask = batch.action_mask
 
         x = F.relu(self.conv1(x, edge_index, edge_attr))
         x = x + F.relu(self.linear(u))
@@ -37,73 +39,57 @@ class DQN(torch.nn.Module):
             print('Contains NaN')
     
         return x + (action_mask - 1) * 1000
-    
-    def forward2(self, gs: GraphState):
-        data = gs.data  # Gets PyTorch Geometric Data object
+
+    def forward(self, data: Data):
         x, edge_index, edge_attr = data.x, data.edge_index, data.edge_attr
-        u = gs.global_feature_vector
-        action_mask = gs.action_mask
+        u = data.u
+        action_mask = data.action_mask
 
-        # Check for NaNs in input data
-        if torch.isnan(x).any():
-            print("NaN detected in input node features x")
-        if torch.isnan(edge_index).any():
-            print("NaN detected in edge index")
-        if edge_attr is not None and torch.isnan(edge_attr).any():
-            print("NaN detected in edge attributes")
-        if torch.isnan(u).any():
-            print("NaN detected in global feature vector u")
-        if torch.isnan(action_mask).any():
-            print("NaN detected in action mask")
+        x = F.relu(self.conv1(x, edge_index, edge_attr))
+        x = x + F.relu(self.linear(u))
+        x = F.relu(self.conv2(x, edge_index, edge_attr))
+        x = F.relu(self.conv3(x, edge_index, edge_attr))
+        x = (self.conv4(x, edge_index, edge_attr))
 
-        # Degree normalization
-        row, col = edge_index  # Unpack edges
-        deg = degree(col, x.size(0), dtype=x.dtype)  # Calculate node degrees
-        if torch.isnan(deg).any():
-            print("NaN detected in degree computation")
+        nan_mask = torch.isnan(x)
+        contains_nan = torch.any(nan_mask)
+    
+        if contains_nan:
+            print('Contains NaN')
 
-        deg_inv_sqrt = deg.pow(-0.5)  # Compute D^{-1/2}
-        deg_inv_sqrt[deg_inv_sqrt == float('inf')] = 0  # Handle inf
+        if self.alt:
+            x = self.linear_alt(x)
+            x = F.softmax(x, dim=0)
+            return x
+    
+        return x + (action_mask - 1) * 1000
 
-        if torch.isnan(deg_inv_sqrt).any():
-            print("NaN detected in degree inverse square root")
 
-        # Normalization term
-        norm = deg_inv_sqrt[row] * deg_inv_sqrt[col]
-        if torch.isnan(norm).any():
-            print("NaN detected in normalization term")
+class DQN_gat(torch.nn.Module):
+    def __init__(self, input_dim, hidden_dim=22, output_dim=11, num_heads=4, dropout=0.3):
+        super().__init__()
+        self.gat1 = GATConv(input_dim, hidden_dim, heads=num_heads, dropout=dropout)
+        self.gat2 = GATConv(hidden_dim * num_heads, hidden_dim, heads=num_heads, dropout=dropout)
+        self.gat3 = GATConv(hidden_dim * num_heads, hidden_dim, heads=num_heads, dropout=dropout)
+        self.gat4 = GATConv(hidden_dim * num_heads, output_dim, heads=1, dropout=dropout)  # Only 1 head in final layer
+        self.linear = torch.nn.Linear(22, hidden_dim)
+    
 
-        # First GCNConv layer
-        x = self.conv1(x, edge_index, edge_attr)
-        if torch.isnan(x).any():
-            print("NaN detected after first GCNConv layer")
+    def forward(self, data: Data):
+        x, edge_index = data.x, data.edge_index
+        u = data.u
+        action_mask = data.action_mask
 
-        x = F.relu(x)
-        if torch.isnan(x).any():
-            print("NaN detected after ReLU activation in first layer")
+        x = F.relu(self.gat1(x, edge_index))
+        #x = x + F.relu(self.linear(u))
+        x = F.relu(self.gat2(x, edge_index))
+        x = F.relu(self.gat3(x, edge_index))
+        x = self.gat4(x, edge_index)
 
-        # Linear layer for global feature vector
-        u = F.relu(self.linear(u))
-        if torch.isnan(u).any():
-            print("NaN detected after linear layer")
-
-        # Combine x and global features u
-        x = x + u
-        if torch.isnan(x).any():
-            print("NaN detected after combining with global features")
-
-        # Second GCNConv layer
-        x = self.conv2(x, edge_index, edge_attr)
-        if torch.isnan(x).any():
-            print("NaN detected after second GCNConv layer")
-
-        x = F.relu(x)
-        if torch.isnan(x).any():
-            print("NaN detected after ReLU activation in second layer")
-
-        # Apply action mask
-        x = x + (action_mask - 1) * 1000
-        if torch.isnan(x).any():
-            print("NaN detected after applying action mask")
-
-        return x
+        nan_mask = torch.isnan(x)
+        contains_nan = torch.any(nan_mask)
+    
+        if contains_nan:
+            print('Contains NaN')
+    
+        return x + (action_mask - 1) * 1000

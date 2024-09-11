@@ -99,17 +99,18 @@ class RLAgent(Agent):
         else:
             # get graph state from board
             state = self.board.get_game_state(self.player)
-            gs = get_graph_from_state(state, self.player, reduced=self.reduced)
-            pos_node_mapping = gs.pos_node_mapping
+            data = get_graph_from_state(state, self.player, reduced=self.reduced)
+            pos_node_mapping = data.pos_node_mapping
             pos_node_mapping_rev = {v: k for k, v in pos_node_mapping.items()}
 
-            if torch.max(gs.action_mask) == 0:
+            if torch.max(data.action_mask) == 0:
                 self.board.player_turns[self.player-1] += 1
                 print('No possible actions for agent')
                 return False
             
             # get masked Q values from model
-            masked_q_values = self.q_network.forward(gs)
+            with torch.no_grad():
+                masked_q_values = self.q_network.forward(data)
             
             # get best action
             action_idx = torch.argmax(masked_q_values).item()

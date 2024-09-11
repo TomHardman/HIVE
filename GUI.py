@@ -150,6 +150,7 @@ class HiveGUI(QtWidgets.QMainWindow):
             s_prime = get_graph_from_state(self.p1_memory[-1][0], 1)
             action = self.p1_memory[-2][1]
             reward = self.reward_calc(1, self.p1_memory[-2][0], self.p1_memory[-1][0])
+            print(f'Action: {action}, Reward: {reward}')
             transition = Transition(s, action, reward, s_prime)
             self.replay.push(transition)
 
