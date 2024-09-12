@@ -61,25 +61,28 @@ class HiveBoard():
         else:
             return self.tile_positions[position]
 
-    def place_tile(self, tile, position):
+    def place_tile(self, tile, position: tuple, update_turns: bool = True):
+        """Places a tile at the given position on the board. Player
+        turns only updated if update_turns is set to true"""
         self.tile_positions[position].append(tile)
         tile.position = position
-        self.update_edges(tile)
         
         # remove tile from hand and update turns
         if tile.player == 1:
             self.player1_hand.discard(tile)
             self.pieces_remaining[0][tile.insect] -= 1
-            self.player_turns[0] += 1
+            if update_turns:
+                self.player_turns[0] += 1
         else:
             self.player2_hand.discard(tile)
             self.pieces_remaining[1][tile.insect] -= 1
-            self.player_turns[1] += 1
+            if update_turns:
+                self.player_turns[1] += 1
         
         if 'queen' in tile.name:
             self.queen_positions[tile.player-1] = position
 
-    def move_tile(self, tile, new_position, update_turns=False):
+    def move_tile(self, tile, new_position: tuple, update_turns: bool = False):
         """Moves a tile to a new position on the board. Player turns
         are only updated if update turns is set to true"""
         # remove tile from old position
@@ -90,7 +93,6 @@ class HiveBoard():
         # add tile to new position
         self.tile_positions[new_position].append(tile)
         tile.position = new_position
-        self.update_edges(tile)
 
         # when called from GUI we want this method to update player turns
         if update_turns:
@@ -103,7 +105,6 @@ class HiveBoard():
     def fill_hand(self, hand, player):
         '''Fills the hand of the given player with three ants,
         three grasshoppers, two beetles, two spiders, and one queen.'''
-        
         for i in range(3):
             ant = Ant(player, i+1, self)
             hand.add(ant)
@@ -271,22 +272,7 @@ class HiveBoard():
         print('Move successful')
         self.player_turns[player-1] += 1
         return True
-    
-    def update_edges(self, tile, recursed=False):
-        '''Updates the edges of the tile based on its position.'''
-        pos = tile.position
-        neighbouring_positions = [(pos[0], pos[1]+1), (pos[0]+1, pos[1]), (pos[0]+1, pos[1]-1), 
-                                  (pos[0], pos[1]-1), (pos[0]-1, pos[1]), (pos[0]-1, pos[1]+1)]            
-        
-        for i, npos in enumerate(neighbouring_positions):
-            ntile = self.get_tile_stack(npos)
-            tile.neighbours[i] = ntile
-            
-            if ntile and recursed==False: # update neighbour's edges
-                for tile_n in ntile:
-                    self.update_edges(tile_n, True)
                 
-    
     def game_over(self):
         """
         Checks if the game is over due to one player surrounding the other's Queen or
@@ -328,7 +314,6 @@ class HiveBoard():
 
         return False
     
-
     def get_legal_actions(self, player):
         '''Returns a list of all legal actions for the given player
         Action space is represented as a dictionary mapping each board
@@ -359,14 +344,13 @@ class HiveBoard():
         
         return legal_actions
     
-
     def get_game_state(self, player):
         """
         Returns the current game state as a dictionary - to be used 
-        by the RL agent 
+        by agent
         """
 
-        game_state = {'player_turns': self.player_turns.copy(),
+        game_state = {'player_turns': copy.deepcopy(self.player_turns),
                       'queen_positions': copy.deepcopy(self.queen_positions),
                       'tile_positions': copy.deepcopy(self.tile_positions),
                       'valid_moves_p1': self.get_legal_actions(1),
@@ -391,4 +375,50 @@ class HiveBoard():
 
         return game_state
 
-            
+    def load_state(self, state: dict):
+        """Loads a game state from state dictionary"""
+        # clear current tile positions and player hands
+        self.tile_positions.clear()
+        self.player1_hand.clear()
+        self.player2_hand.clear()
+        self.fill_hand(self.player1_hand, 1)
+        self.fill_hand(self.player2_hand, 2)
+        self.pieces_remaining = [{'ant': 3, 
+                                  'beetle': 2, 
+                                  'grasshopper': 3, 
+                                  'spider': 2, 
+                                  'queen': 1} 
+                                for _ in range(2)]
+        
+        self.queen_positions = state['queen_positions'].copy()
+        self.player_turns = state['player_turns'].copy()
+        tile_positions = state['tile_positions']
+
+        for pos, tiles in tile_positions.items(): # iterate through tile positions and place tiles
+            for tile in tiles:
+                tile_name = tile.name
+                tile_obj = self.name_obj_mapping[tile_name]
+                self.place_tile(tile_obj, pos, update_turns=False)
+    
+    def undo_move(self, tile, old_position=None):
+        """Undoes a move"""
+
+        if old_position == None: # tile was placed
+            try:
+                self.tile_positions[tile.position].pop()
+                if len(self.tile_positions[tile.position]) == 0:
+                    del self.tile_positions[tile.position]
+            except IndexError:
+                pass
+            tile.position = None
+            if tile.player == 1:
+                self.player1_hand.add(tile)
+                self.pieces_remaining[0][tile.insect] += 1
+            else:
+                self.player2_hand.add(tile)
+                self.pieces_remaining[1][tile.insect] += 1
+        
+        else: # tile was moved
+            self.move_tile(tile, old_position, update_turns=False)
+        
+        self.player_turns[tile.player-1] -= 1

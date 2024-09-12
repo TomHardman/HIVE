@@ -1,7 +1,8 @@
 from board import HiveBoard
-from agents import RandomAgent, RLAgent
+from agents import RandomAgent, DQLAgent, HeuristicAgent
 from networks import DQN, DQN_gat
 import torch
+from heuristic import Params
 
 """
 Provides arena environment for agents to self play/for agents to play each other
@@ -17,7 +18,7 @@ class HiveArena():
         """
         Play a game between two agents.
         """
-        board = HiveBoard(max_turns=100, simplified_game=self.simplified)
+        board = HiveBoard(max_turns=20, simplified_game=self.simplified)
         self.p1.set_board(board)
         self.p2.set_board(board)
         moves = 0
@@ -57,11 +58,19 @@ if __name__ == '__main__':
     with open('models/simplified3_at10000.pt', 'rb') as f:
         state_dict = torch.load(f)
     reduced = False
-    dqn = DQN(13 if reduced else 25)
+    
+    dqn = DQN_gat(13 if reduced else 25)
     dqn.load_state_dict(state_dict)
+    rl_agent1 = DQLAgent(1, dqn, 0, reduced=reduced)
+    rl_agent2 = DQLAgent(2, dqn, 0, reduced=reduced)
+
     randomagent1 = RandomAgent(1)
     randomagent2 = RandomAgent(2)
-    agent1 = RLAgent(1, dqn, 0, reduced=reduced)
-    agent2 = RLAgent(2, dqn, 0)
-    arena = HiveArena(agent1, randomagent2, simplified=False)
-    arena.simulate_games(50, print_outcomes=True, log=True)
+
+    # Heuristic Agent
+    params = Params(queen_surrounding_reward=1, win_reward=100, ownership_reward=3, 
+                    mp_reward=0.5)
+    heuristic_agent2 = HeuristicAgent(2, 1, params)
+    
+    arena = HiveArena(randomagent1, heuristic_agent2, simplified=False)
+    arena.simulate_games(10, print_outcomes=True, log=True)

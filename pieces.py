@@ -7,7 +7,6 @@ class HiveTile: # parent class for all pieces
         self.name = name + str(n) + '_p' + str(player)
         self.insect = name
         self.position = None
-        self.neighbours = [None, None, None, None, None, None] # clockwise from 12 o'clock
         self.is_beetle = beetle
         self.board = board
     
@@ -89,6 +88,14 @@ class Beetle(HiveTile):
         if self.covered() or not self.queen_placed():
             return set()
         
+        original_pos = self.position
+        
+        self.board.move_tile(self, (100, 100)) # test if removing from original pos breaks hive
+        if self.board.check_unconnected(dummy_pos=(100, 100)):
+            self.board.move_tile(self, original_pos)
+            return set()
+        self.board.move_tile(self, original_pos)
+
         valid_moves_temp = set()
         valid_moves = set()
 
@@ -245,7 +252,16 @@ class Queen(HiveTile):
     def get_valid_moves(self):
         if self.covered() or not self.queen_placed():
             return set()
+
+        original_pos = self.position
         
+        if len(self.board.tile_positions) >= 2:
+            self.board.move_tile(self, (100, 100)) # test if removing from original pos breaks hive
+            if self.board.check_unconnected(dummy_pos=(100, 100)):
+                self.board.move_tile(self, original_pos)
+                return set()
+            self.board.move_tile(self, original_pos)
+
         valid_moves_temp = set()
         valid_moves = set()
 
