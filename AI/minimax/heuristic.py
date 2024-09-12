@@ -1,6 +1,5 @@
-from rl_helper import RewardCalculator
+from AI.DQL.rl_helper import RewardCalculator
 from dataclasses import dataclass
-from random import randint
 
 
 @dataclass

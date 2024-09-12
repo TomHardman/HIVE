@@ -1,8 +1,8 @@
-from board import HiveBoard
-from agents import RandomAgent, DQLAgent, HeuristicAgent
-from networks import DQN, DQN_gat
+from game import HiveBoard
+from AI.agents import RandomAgent, DQLAgent, HeuristicAgent
+from AI.DQL.networks import DQN, DQN_gat
 import torch
-from heuristic import Params
+from AI.minimax.heuristic import Params
 
 """
 Provides arena environment for agents to self play/for agents to play each other
@@ -55,7 +55,7 @@ class HiveArena():
 
 
 if __name__ == '__main__':
-    with open('models/simplified3_at10000.pt', 'rb') as f:
+    with open('AI/DQL/models/simplified3_no_win_r_40000.pt', 'rb') as f:
         state_dict = torch.load(f)
     reduced = False
     

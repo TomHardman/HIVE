@@ -1,9 +1,9 @@
 from OpenGL.GL import *
 import math
 
-from drawing import *
+from .drawing import *
+from .PX_SCALE import PX_SCALE # for making sure co-ordinates are the same as mouse co-ords
 
-from PX_SCALE import PX_SCALE # for making sure co-ordinates are the same as mouse co-ords
 
 class PieceMixin:
     def render(self, x=None, y=None):

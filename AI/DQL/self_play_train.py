@@ -1,7 +1,7 @@
-from networks import DQN, DQN_gat
-from agents import RLAgent
-from board import HiveBoard
-from rl_helper import ExperienceReplay, RewardCalculator, get_graph_from_state, Transition, REWARDS_DICT, LossBuffer
+from .networks import DQN, DQN_gat
+from AI.agents import DQLAgent
+from game import HiveBoard
+from .rl_helper import ExperienceReplay, RewardCalculator, get_graph_from_state, Transition, REWARDS_DICT, LossBuffer
 
 import copy
 import torch
@@ -111,8 +111,8 @@ def main(args):
     else:
         tgt_qn = copy.deepcopy(dqn)
     
-    rl_agent1 = RLAgent(1, dqn, args.epsilon, reduced=args.reduced)
-    rl_agent2 = RLAgent(2, tgt_qn, args.epsilon, reduced=args.reduced)
+    rl_agent1 = DQLAgent(1, dqn, args.epsilon, reduced=args.reduced)
+    rl_agent2 = DQLAgent(2, tgt_qn, args.epsilon, reduced=args.reduced)
 
     optimizer = torch.optim.Adam(dqn.parameters(), lr=args.learning_rate)
     criterion = torch.nn.MSELoss()

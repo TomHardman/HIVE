@@ -3,7 +3,6 @@ import math
 import time
 from collections import defaultdict
 
-
 from PyQt5 import QtGui       # extends QtCore with GUI functionality
 from PyQt5 import QtWidgets
 from PyQt5 import QtOpenGL 
@@ -14,16 +13,15 @@ from PyQt5.QtCore import QEventLoop
 import OpenGL.GL as gl
 from OpenGL import GLU
 
-from gui_pieces import BoardPiece, ButtonPiece
-from board import HiveBoard, ACTIONSPACE, ACTIONSPACE_INV
-from drawing import draw_hexagon
+from .gui_pieces import BoardPiece, ButtonPiece
+from .drawing import draw_hexagon
+from game import HiveBoard, ACTIONSPACE
+from .PX_SCALE import PX_SCALE
+from AI.DQL import ExperienceReplay, RewardCalculator, get_graph_from_state, REWARDS_DICT, Transition
 
-from PX_SCALE import PX_SCALE
-
-from rl_helper import ExperienceReplay, RewardCalculator, get_graph_from_state, REWARDS_DICT, Transition
 
 class HiveGUI(QtWidgets.QMainWindow):   
-    def __init__(self, board, rl_debug=False):
+    def __init__(self, board: HiveBoard, rl_debug=False):
         super().__init__()
         self.resize(1000, 800)
         self.setWindowTitle('HIVE GUI')
@@ -150,7 +148,6 @@ class HiveGUI(QtWidgets.QMainWindow):
             s_prime = get_graph_from_state(self.p1_memory[-1][0], 1)
             action = self.p1_memory[-2][1]
             reward = self.reward_calc(1, self.p1_memory[-2][0], self.p1_memory[-1][0])
-            print(f'Action: {action}, Reward: {reward}')
             transition = Transition(s, action, reward, s_prime)
             self.replay.push(transition)
 
@@ -479,13 +476,3 @@ class SelectionCanvas(QtOpenGL.QGLWidget):
                     return button
         return None
 
-
-if __name__ == '__main__':
-    app = QtWidgets.QApplication(sys.argv)
-
-    board = HiveBoard()
-    window = HiveGUI(board)
-    window.show()
-
-    sys.exit(app.exec_())
-    

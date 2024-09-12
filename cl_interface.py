@@ -1,4 +1,4 @@
-from board import HiveBoard
+from game import HiveBoard
 
 def turn_cl(board, player):
     turn = input(f'Player {player} Turn: ') # input turn in format tile_name, move_type, new_position

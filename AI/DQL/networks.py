@@ -2,12 +2,9 @@ import torch
 import torch.nn.functional as F
 
 from torch_geometric.nn import GCNConv, GATConv
-from torch_geometric.data import Data, Batch
+from torch_geometric.data import Data
 from torch_geometric.loader import DataLoader
 
-from rl_helper import GraphState
-
-from torch_geometric.utils import add_self_loops, degree
 
 class DQN(torch.nn.Module):
     def __init__(self, input_dim, hidden_dim=22, output_dim=11, alt=False):
@@ -21,24 +18,6 @@ class DQN(torch.nn.Module):
         self.alt = alt
         self.linear_alt = torch.nn.Linear(11, 1)
     
-    def forward_batch(self, batch):
-        x, edge_index, edge_attr = batch.x, batch.edge_index, batch.edge_attr
-        u = batch.global_feature_vector
-        action_mask = batch.action_mask
-
-        x = F.relu(self.conv1(x, edge_index, edge_attr))
-        x = x + F.relu(self.linear(u))
-        x = F.relu(self.conv2(x, edge_index, edge_attr))
-        x = F.relu(self.conv3(x, edge_index, edge_attr))
-        x = (self.conv4(x, edge_index, edge_attr))
-
-        nan_mask = torch.isnan(x)
-        contains_nan = torch.any(nan_mask)
-    
-        if contains_nan:
-            print('Contains NaN')
-    
-        return x + (action_mask - 1) * 1000
 
     def forward(self, data: Data):
         x, edge_index, edge_attr = data.x, data.edge_index, data.edge_attr
@@ -81,7 +60,7 @@ class DQN_gat(torch.nn.Module):
         action_mask = data.action_mask
 
         x = F.relu(self.gat1(x, edge_index))
-        #x = x + F.relu(self.linear(u))
+        x = x + F.relu(self.linear(u))
         x = F.relu(self.gat2(x, edge_index))
         x = F.relu(self.gat3(x, edge_index))
         x = self.gat4(x, edge_index)

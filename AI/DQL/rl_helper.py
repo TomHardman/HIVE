@@ -9,7 +9,7 @@ import random
 
 import matplotlib.pyplot as plt
 
-from board import ACTIONSPACE, ACTIONSPACE_INV
+from game import ACTIONSPACE, ACTIONSPACE_INV
 
 REWARDS_DICT = {'queen_ownership': 0,
                 'queen_surrounding': 1,

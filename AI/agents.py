@@ -1,10 +1,10 @@
 import random
+import copy
 from abc import ABC, abstractmethod
 
-from rl_helper import get_graph_from_state
-from board import ACTIONSPACE_INV
-from networks import DQN
-from board import HiveBoard
+from .DQL import DQN, get_graph_from_state
+from game import HiveBoard, ACTIONSPACE_INV
+from .minimax import minimax, beam_minimax, Params
 
 import torch
 
@@ -71,9 +71,48 @@ class RandomAgent(Agent):
             self.board.player_turns[self.player-1] += 1
             print('No possible actions for agent')
             return False
-        
 
-class RLAgent(Agent):
+
+class HeuristicAgent(Agent):
+    def __init__(self, player: int, depth: int, params: Params, board=None):
+        self.player = player
+        self.board = board
+        self.eval_params = params
+        self.depth = depth
+    
+    def set_board(self, board: HiveBoard):
+        self.board = board
+
+    def sample_action(self):
+        """
+        Get possible actions from board and evaluate each action using
+        minimax with alpha beta pruning. Returns best action.
+        """
+        board = copy.deepcopy(self.board)
+        state = self.board.get_game_state(self.player) 
+        max_eval, best_move = minimax(board, self.depth, True, self.player, self.eval_params, float('-inf'), float('inf'))
+        if best_move:
+            pos, tile_idx = best_move
+            piece_id = ACTIONSPACE_INV[tile_idx]
+            tile_name = piece_id + '_p' + str(self.player)
+            tile_obj = self.board.name_obj_mapping[tile_name]
+            
+            # work out if piece to be moved has been placed or not
+            if tile_obj not in self.board.player1_hand and tile_obj not in self.board.player2_hand:
+                self.board.move_tile(tile_obj, pos, update_turns=True)
+            
+            else:
+                self.board.place_tile(tile_obj, pos)
+        
+        else: 
+            self.board.player_turns[self.player-1] += 1
+            print('No possible actions for agent')
+            return False
+        
+        return best_move
+
+
+class DQLAgent(Agent):
     def __init__(self, player: int, q_network: DQN, epsilon: float, 
                  board=None, reduced=False):
         self.player = player

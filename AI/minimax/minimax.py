@@ -1,6 +1,6 @@
-from heuristic import evaluate
+from .heuristic import evaluate
 import heapq
-from board import ACTIONSPACE_INV, HiveBoard
+from game import ACTIONSPACE_INV, HiveBoard
 
 states_count = 0
 

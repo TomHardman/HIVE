@@ -2,7 +2,8 @@ from OpenGL.GL import *
 from OpenGL.GLUT import glutBitmapCharacter, GLUT_BITMAP_8_BY_13
 import math
 
-from PX_SCALE import PX_SCALE
+from .PX_SCALE import PX_SCALE
+
 
 def draw_hexagon(x0, y0, width, fill=True):
     """
@@ -29,6 +30,7 @@ def draw_hexagon(x0, y0, width, fill=True):
     glEnd()
     glLineWidth(1.0)
 
+
 def draw_ellipse(x0, y0, h_rad, v_rad, num_segments=100):
     """
     Draw a filled ellipse with the specified width and height.
@@ -53,9 +55,11 @@ def draw_ellipse(x0, y0, h_rad, v_rad, num_segments=100):
 
 
 def draw_text(x, y, text):
+    """Draws some text"""
     glRasterPos2f(x, y)  # Set the position for the text
     for char in text:
         glutBitmapCharacter(GLUT_BITMAP_8_BY_13, ord(char))
+
 
 def draw_ant(x0, y0, width):
     """
@@ -106,6 +110,12 @@ def draw_ant(x0, y0, width):
 
 
 def draw_spider(x0, y0, width):
+    """Draws Spider inside a hexagon of specified width.
+    
+    :param x0: The x-coordinate of the center of the hexagon.
+    :param y0: The y-coordinate of the center of the hexagon.
+    :param width: The width of the hexagon (distance between opposite vertices).
+    """
     glColor3f(0.48, 0.25, 0.07)  # Brown color for the text
     segment_radius = width / 7
     draw_ellipse(x0, y0, 0.75*segment_radius, segment_radius)
@@ -159,6 +169,13 @@ def draw_spider(x0, y0, width):
 
 
 def draw_grasshopper(x0, y0, width):
+    """
+    Draws Grasshopper inside a hexagon of specified width.
+    
+    :param x0: The x-coordinate of the center of the hexagon.
+    :param y0: The y-coordinate of the center of the hexagon.
+    :param width: The width of the hexagon (distance between opposite vertices).
+    """
     glColor3f(0.13, 0.7, 0.1)  # Green color
 
     glBegin(GL_POLYGON)
@@ -221,6 +238,13 @@ def draw_grasshopper(x0, y0, width):
 
 
 def draw_beetle(x0, y0, width):
+    """
+    Draws Beetle inside a hexagon of specified width.
+    
+    :param x0: The x-coordinate of the center of the hexagon.
+    :param y0: The y-coordinate of the center of the hexagon.
+    :param width: The width of the hexagon (distance between opposite vertices).
+    """
     glColor3f(0.8, 0, 1.0)  # Green color for the text
     segment_radius = width / 4.2
 

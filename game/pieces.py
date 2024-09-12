@@ -37,6 +37,15 @@ class HiveTile: # parent class for all pieces
         elif len(self.board.get_tile_stack(npos_arr[(i+1)%6])) == 1 and self.board.get_tile_stack(npos_arr[(i+1)%6])[0] == self:
             return True
         return False
+    
+    def test_breakage(self, original_pos):
+        if len (self.board.tile_positions) >= 2:
+            self.board.move_tile(self, (100, 100)) # test if removing from original pos breaks hive
+            if self.board.check_unconnected(dummy_pos=(100, 100)):
+                self.board.move_tile(self, original_pos)
+                return True
+            self.board.move_tile(self, original_pos)
+        return False
 
 
 class Ant(HiveTile):
@@ -49,11 +58,8 @@ class Ant(HiveTile):
 
         original_pos = self.position
 
-        self.board.move_tile(self, (100, 100)) # test if removing from original pos breaks hive
-        if self.board.check_unconnected(dummy_pos=(100, 100)):
-            self.board.move_tile(self, original_pos)
+        if self.test_breakage(original_pos):
             return set()
-        self.board.move_tile(self, original_pos)
 
         seen = set()
         valid_moves = set()
@@ -90,11 +96,8 @@ class Beetle(HiveTile):
         
         original_pos = self.position
         
-        self.board.move_tile(self, (100, 100)) # test if removing from original pos breaks hive
-        if self.board.check_unconnected(dummy_pos=(100, 100)):
-            self.board.move_tile(self, original_pos)
+        if self.test_breakage(original_pos):
             return set()
-        self.board.move_tile(self, original_pos)
 
         valid_moves_temp = set()
         valid_moves = set()
@@ -149,11 +152,8 @@ class Grasshopper(HiveTile):
         
         original_pos = self.position
         
-        self.board.move_tile(self, (100, 100)) # test if removing from original pos breaks hive
-        if self.board.check_unconnected(dummy_pos=(100, 100)):
-            self.board.move_tile(self, original_pos)
+        if self.test_breakage(original_pos):
             return set()
-        self.board.move_tile(self, original_pos)
 
         valid_moves_temp = set() # temporary set to store valid moves before checking connectedness
         valid_moves = set()
@@ -211,11 +211,8 @@ class Spider(HiveTile):
         
         original_pos = self.position
         
-        self.board.move_tile(self, (100, 100)) # test if removing from original pos breaks hive
-        if self.board.check_unconnected(dummy_pos=(100, 100)):
-            self.board.move_tile(self, original_pos)
+        if self.test_breakage(original_pos):
             return set()
-        self.board.move_tile(self, original_pos)
             
         seen = set([self.position])
         valid_moves = set()
@@ -255,12 +252,8 @@ class Queen(HiveTile):
 
         original_pos = self.position
         
-        if len(self.board.tile_positions) >= 2:
-            self.board.move_tile(self, (100, 100)) # test if removing from original pos breaks hive
-            if self.board.check_unconnected(dummy_pos=(100, 100)):
-                self.board.move_tile(self, original_pos)
-                return set()
-            self.board.move_tile(self, original_pos)
+        if self.test_breakage(original_pos):
+            return set()
 
         valid_moves_temp = set()
         valid_moves = set()

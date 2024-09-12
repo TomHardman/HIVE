@@ -2,12 +2,10 @@ import sys
 
 from PyQt5 import QtWidgets
 from GUI import HiveGUI
-from board import HiveBoard
-from agents import RandomAgent, DQLAgent, HeuristicAgent
-from heuristic import Params
-
-from rl_helper import ExperienceReplay, RewardCalculator, get_graph_from_state
-from networks import DQN, DQN_gat
+from game import HiveBoard
+from AI.agents import RandomAgent, DQLAgent, HeuristicAgent
+from AI.minimax import Params
+from AI.DQL import DQN, DQN_gat
 
 import torch
 
@@ -16,8 +14,8 @@ if __name__ == '__main__':
     board = HiveBoard()
     
     # DQL Agent
-    dqn = DQN_gat(13 if reduced else 25)
-    dqn.load_state_dict(torch.load('models/simplified3_at10000.pt'))
+    dqn = DQN(13 if reduced else 25)
+    dqn.load_state_dict(torch.load('AI/DQL/models/simplified3_no_win_r_40000.pt'))
     rl_agent = DQLAgent(2, dqn, 0, board, reduced=reduced)
 
     # Random Agent
@@ -26,7 +24,7 @@ if __name__ == '__main__':
     # Heuristic Agent
     params = Params(queen_surrounding_reward=1, win_reward=100, ownership_reward=5,
                     mp_reward=0.5)
-    heuristic_agent = HeuristicAgent(2, 3, params, board)
+    heuristic_agent = HeuristicAgent(2, 2, params, board)
     
     app = QtWidgets.QApplication(sys.argv)
 

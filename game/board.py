@@ -1,21 +1,7 @@
 from collections import defaultdict
-from pieces import Ant, Beetle, Grasshopper, Spider, Queen
+from .pieces import Ant, Beetle, Grasshopper, Spider, Queen
+from .ACTIONSPACE import ACTIONSPACE, ACTIONSPACE_INV
 import copy
-
-
-ACTIONSPACE  = {'queen1': 0,
-                'spider1': 1,
-                'spider2': 2,
-                'beetle1': 3,
-                'beetle2': 4,
-                'ant1': 5,
-                'ant2': 6,
-                'ant3': 7,
-                'grasshopper1': 8,
-                'grasshopper2': 9,
-                'grasshopper3': 10}
-
-ACTIONSPACE_INV = {v: k for k, v in ACTIONSPACE.items()}
 
 
 class HiveBoard():
@@ -402,14 +388,10 @@ class HiveBoard():
     
     def undo_move(self, tile, old_position=None):
         """Undoes a move"""
-
         if old_position == None: # tile was placed
-            try:
-                self.tile_positions[tile.position].pop()
-                if len(self.tile_positions[tile.position]) == 0:
-                    del self.tile_positions[tile.position]
-            except IndexError:
-                pass
+            self.tile_positions[tile.position].pop()
+            if len(self.tile_positions[tile.position]) == 0:
+                del self.tile_positions[tile.position]
             tile.position = None
             if tile.player == 1:
                 self.player1_hand.add(tile)
