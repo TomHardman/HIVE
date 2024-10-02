@@ -1,5 +1,6 @@
 from .heuristic import evaluate
 import heapq
+from multiprocessing import Pool
 from game import ACTIONSPACE_INV, HiveBoard
 
 states_count = 0
@@ -148,7 +149,6 @@ def beam_minimax(board: HiveBoard, depth, is_maximizing, player, eval_params,
             if beta <= alpha:
                 break  # Alpha cutoff
 
-        print(states_count)
         return min_eval, best_move
 
 

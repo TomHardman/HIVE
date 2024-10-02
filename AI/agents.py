@@ -90,7 +90,7 @@ class HeuristicAgent(Agent):
         """
         board = copy.deepcopy(self.board)
         state = self.board.get_game_state(self.player) 
-        max_eval, best_move = minimax(board, self.depth, True, self.player, self.eval_params, float('-inf'), float('inf'))
+        max_eval, best_move = beam_minimax(board, self.depth, True, self.player, self.eval_params, float('-inf'), float('inf'))
         if best_move:
             pos, tile_idx = best_move
             piece_id = ACTIONSPACE_INV[tile_idx]

@@ -1,1 +1,1 @@
-PX_SCALE = 1
+PX_SCALE = 2
