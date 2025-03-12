@@ -44,14 +44,77 @@ class HiveTile(ABC): # parent class for all pieces
         return False
     
     def test_breakage(self, original_pos):
-        if len (self.board.tile_positions) >= 2:
-            self.board.move_tile(self, (100, 100)) # test if removing from original pos breaks hive
-            if self.board.check_unconnected(dummy_pos=(100, 100)):
-                self.board.move_tile(self, original_pos)
-                return True
-            self.board.move_tile(self, original_pos)
-        return False
+        """
+        Optimized version that checks if removing a piece would break the hive
+        without modifying the board state
+        """
+        # Special case: if only 1-2 pieces on board, moving can't break connectivity
+        if len(self.board.tile_positions) <= 2:
+            return False
+        
+        # The key insight: the hive stays connected if the piece's original position
+        # has at least two neighbors that are also neighbors of each other
+        
+        # Get occupied positions except this piece's position
+        occupied = set(self.board.tile_positions.keys())
+        occupied.remove(original_pos)
+        
+        # Get all neighbors of the original position
+        neighbors = [
+            (original_pos[0], original_pos[1]+1), (original_pos[0]+1, original_pos[1]),
+            (original_pos[0]+1, original_pos[1]-1), (original_pos[0], original_pos[1]-1),
+            (original_pos[0]-1, original_pos[1]), (original_pos[0]-1, original_pos[1]+1)
+        ]
+        
+        # Count occupied neighbors
+        occupied_neighbors = [n for n in neighbors if n in occupied]
+        
+        # If fewer than 2 neighbors, removing can't disconnect (already disconnected or linear)
+        if len(occupied_neighbors) < 2:
+            return False
+            
+        # Check if neighbors form a connected subgraph
+        # We only need to check pairs of neighbors to see if any are adjacent
+        for i in range(len(occupied_neighbors)):
+            for j in range(i+1, len(occupied_neighbors)):
+                if self._are_adjacent(occupied_neighbors[i], occupied_neighbors[j]):
+                    return False  # Found adjacent neighbors, hive won't break
+                    
+        # No adjacent neighbors found, removing would break the hive
+        return True
 
+    def _are_adjacent(self, pos1, pos2):
+        """Check if two positions are adjacent on the hex grid"""
+        dx = pos1[0] - pos2[0]
+        dy = pos1[1] - pos2[1]
+        return (dx == 0 and abs(dy) == 1) or (dy == 0 and abs(dx) == 1) or (dx == dy and abs(dx) == 1)
+    
+    def _can_slide_to(self, from_pos, direction_index, neighbors, occupied_positions):
+        """
+        Check if piece can slide from from_pos to the neighbor at direction_index
+        without physically moving pieces on the board.
+        """
+        # Get the positions to the left and right of the target position
+        left_idx = (direction_index - 1) % 6
+        right_idx = (direction_index + 1) % 6
+        left_pos = neighbors[left_idx]
+        right_pos = neighbors[right_idx]
+        
+        # If either side is empty, sliding is possible
+        if left_pos not in occupied_positions or right_pos not in occupied_positions:
+            return True
+            
+        # Check if the piece itself is currently at one of these positions
+        if (len(self.board.get_tile_stack(left_pos) or []) == 1 and 
+            self.board.get_tile_stack(left_pos)[0] == self):
+            return True
+            
+        if (len(self.board.get_tile_stack(right_pos) or []) == 1 and 
+            self.board.get_tile_stack(right_pos)[0] == self):
+            return True
+            
+        return False
+        
     def _get_board_hash(self):
         """Generate a comprehensive hash of the current board state for caching"""
         board_state = []
@@ -76,7 +139,6 @@ class HiveTile(ABC): # parent class for all pieces
         cache_key = (self.name, board_hash)
         
         # Check global cache first (persists across search tree)
-        print(len(_TILE_MOVE_CACHE))
         if cache_key in _TILE_MOVE_CACHE:
             return _TILE_MOVE_CACHE[cache_key]
         
@@ -99,34 +161,59 @@ class Ant(HiveTile):
         super().__init__('ant', player, n, board)
     
     def _calculate_valid_moves(self):
-        """Actual computation function for Ant's valid moves"""
+        """Optimized Ant move generation without temporary board state changes"""
         original_pos = self.position
 
         if self.test_breakage(original_pos):
             return set()
 
-        seen = set()
+        # Get occupied positions for faster lookup
+        occupied_positions = set(self.board.tile_positions.keys())
+        
+        # Track positions we've already processed
+        seen = set([original_pos])
         valid_moves = set()
-        bfs_queue = deque([original_pos])
-
-        while bfs_queue:
-            pos = bfs_queue.popleft()
-            npos_arr = [(pos[0], pos[1]+1), (pos[0]+1, pos[1]), (pos[0]+1, pos[1]-1),
-                        (pos[0], pos[1]-1), (pos[0]-1, pos[1]), (pos[0]-1, pos[1]+1)]
+        
+        # Start BFS from original position
+        frontier = set([original_pos])
+        next_frontier = set()
+        
+        # Continue BFS until no new positions can be reached
+        while frontier:
+            for pos in frontier:
+                # Get all six neighboring positions
+                neighbors = [
+                    (pos[0], pos[1]+1), (pos[0]+1, pos[1]), (pos[0]+1, pos[1]-1),
+                    (pos[0], pos[1]-1), (pos[0]-1, pos[1]), (pos[0]-1, pos[1]+1)
+                ]
+                
+                # Process each neighbor
+                for i, neighbor_pos in enumerate(neighbors):
+                    # Skip if already processed
+                    if neighbor_pos in seen:
+                        continue
+                    
+                    # Skip if position is occupied
+                    if neighbor_pos in occupied_positions:
+                        continue
+                    
+                    # Check if sliding is possible (without modifying board state)
+                    if not self._can_slide_to(pos, i, neighbors, occupied_positions):
+                        continue
+                    
+                    # Check if move would break hive connectivity (without temporary moves)
+                    if self.test_breakage(original_pos):
+                        continue
+                    
+                    # This is a valid move
+                    valid_moves.add(neighbor_pos)
+                    seen.add(neighbor_pos)
+                    next_frontier.add(neighbor_pos)
             
-            for i in range(len(npos_arr)):
-                if npos_arr[i] not in seen:
-                    if self.board.get_tile_stack(npos_arr[i]) == None: # if there is a space to move into
-                        #   check adjacent neighbours to see if sliding is possible
-                        if self.check_slide_space(npos_arr, i):
-                            # check whether tile can be moved without breaking one-hive rule - this applies during move
-                            if self.board.get_tile_stack(npos_arr[(i-1)%6]) != self.board.get_tile_stack(npos_arr[(i+1)%6]):
-                                self.board.move_tile(self, npos_arr[i])
-                                if not self.board.check_unconnected():
-                                    valid_moves.add(npos_arr[i])
-                                    seen.add(npos_arr[i]) # only stores spaces ant has explored from
-                                    bfs_queue.append(npos_arr[i]) 
-                                self.board.move_tile(self, original_pos) 
+            # Prepare for next iteration
+            frontier = next_frontier
+            next_frontier = set()
+        
         return valid_moves
     
     def get_valid_moves(self):
@@ -139,50 +226,76 @@ class Beetle(HiveTile):
         super().__init__('beetle', player, n, board, beetle=True)
     
     def _calculate_valid_moves(self):
-        """Actual computation function for Beetle's valid moves"""
+        """Optimized Beetle move generation without temporary board state changes"""
         original_pos = self.position
+        is_on_stack = len(self.board.get_tile_stack(original_pos)) > 1
         
-        if self.test_breakage(original_pos):
+        # Skip connectivity test if beetle is on a stack (can't disconnect hive)
+        if not is_on_stack and self.test_breakage(original_pos):
             return set()
 
-        valid_moves_temp = set()
-        valid_moves = set()
-
-        npos_arr = [(original_pos[0], original_pos[1]+1), (original_pos[0]+1, original_pos[1]), 
-                    (original_pos[0]+1, original_pos[1]-1), (original_pos[0], original_pos[1]-1), 
-                    (original_pos[0]-1, original_pos[1]), (original_pos[0]-1, original_pos[1]+1)]
-
-        for i in range(len(npos_arr)):
-            if self.board.get_tile_stack(npos_arr[i]) == None:
-                # check adjacent neighbours to see if sliding is possible
-                if self.check_slide_space(npos_arr, i):
-                    # check whether tile can be moved without breaking one-hive rule - this applies during move
-                    if len(self.board.get_tile_stack(original_pos)) == 1:
-                        if self.board.get_tile_stack(npos_arr[(i-1)%6]) != self.board.get_tile_stack(npos_arr[(i+1)%6]):
-                            valid_moves_temp.add(npos_arr[i])
-                    else:
-                        valid_moves_temp.add(npos_arr[i])
-                
-                # slide logic doesn't apply if climbing down
-                elif len(self.board.get_tile_stack(original_pos)) > 1:
-                    valid_moves_temp.add(npos_arr[i])
-
-            # check sliding logic at higher level
-            elif len(self.board.get_tile_stack(original_pos)) == 2 and len(self.board.get_tile_stack(npos_arr[i])) == 1:
-                if self.board.get_tile_stack(npos_arr[(i-1)%6]) == None or self.board.get_tile_stack(npos_arr[(i+1)%6]) == None:
-                    valid_moves_temp.add(npos_arr[i])
-                elif not (len(self.board.get_tile_stack(npos_arr[(i-1)%6])) == 2 and len(self.board.get_tile_stack(npos_arr[(i-1)%6])) == 2):
-                    valid_moves_temp.add(npos_arr[i])
-            else:
-                valid_moves_temp.add(npos_arr[i])
-
+        # Get occupied positions for faster lookup
+        occupied_positions = set(self.board.tile_positions.keys())
         
-        # check if the move is valid by checking if the hive is still connected after moving
-        for move in valid_moves_temp:
-            self.board.move_tile(self, move)
-            if not self.board.check_unconnected():
-                valid_moves.add(move)
-            self.board.move_tile(self, original_pos)
+        # Get all six neighboring positions
+        neighbors = [
+            (original_pos[0], original_pos[1]+1), (original_pos[0]+1, original_pos[1]),
+            (original_pos[0]+1, original_pos[1]-1), (original_pos[0], original_pos[1]-1),
+            (original_pos[0]-1, original_pos[1]), (original_pos[0]-1, original_pos[1]+1)
+        ]
+        
+        valid_moves = set()
+        
+        # Process each neighbor
+        for i, neighbor_pos in enumerate(neighbors):
+            # Case 1: Moving to an empty space
+            if neighbor_pos not in occupied_positions:
+                # If on a stack, can always move down to empty space
+                if is_on_stack:
+                    valid_moves.add(neighbor_pos)
+                    continue
+                
+                # Otherwise, check sliding rules
+                # Get the positions to the left and right
+                left_idx = (i - 1) % 6
+                right_idx = (i + 1) % 6
+                left_pos = neighbors[left_idx]
+                right_pos = neighbors[right_idx]
+                
+                # Need at least one empty side to slide
+                if left_pos not in occupied_positions or right_pos not in occupied_positions:
+                    # Additional check for non-equal sides when on ground level
+                    if self.board.get_tile_stack(left_pos) != self.board.get_tile_stack(right_pos):
+                        valid_moves.add(neighbor_pos)
+            
+            # Case 2: Can always climb onto other pieces
+            else:
+                # Get the stack at that position
+                dest_stack = self.board.get_tile_stack(neighbor_pos)
+                
+                # If we're on the ground level, need to check slide rules for climbing
+                if not is_on_stack:
+                    # Get the positions to the left and right
+                    left_idx = (i - 1) % 6
+                    right_idx = (i + 1) % 6
+                    left_pos = neighbors[left_idx]
+                    right_pos = neighbors[right_idx]
+                    
+                    # Climbing from level 1 has special rules
+                    if (len(dest_stack) == 1 and len(self.board.get_tile_stack(original_pos)) == 1):
+                        # Need either empty space on one side
+                        if (left_pos not in occupied_positions or right_pos not in occupied_positions):
+                            valid_moves.add(neighbor_pos)
+                        # Or non-double-stack on both sides
+                        elif not (len(self.board.get_tile_stack(left_pos)) == 2 and 
+                                 len(self.board.get_tile_stack(right_pos)) == 2):
+                            valid_moves.add(neighbor_pos)
+                    else:
+                        # All other climbing is always valid
+                        valid_moves.add(neighbor_pos)
+                else:
+                    # When already on a stack, can always climb further
+                    valid_moves.add(neighbor_pos)
         
         return valid_moves
     
@@ -196,54 +309,51 @@ class Grasshopper(HiveTile):
         super().__init__('grasshopper', player, n, board)
     
     def _calculate_valid_moves(self):
-        """Actual computation function for Grasshopper's valid moves"""
+        """Optimized function for Grasshopper's valid moves without temporary board changes"""
         original_pos = self.position
         
         if self.test_breakage(original_pos):
             return set()
 
-        valid_moves_temp = set() # temporary set to store valid moves before checking connectedness
         valid_moves = set()
-
-        npos_arr = [(original_pos[0], original_pos[1]+1), (original_pos[0]+1, original_pos[1]), 
-                    (original_pos[0]+1, original_pos[1]-1), (original_pos[0], original_pos[1]-1), 
-                    (original_pos[0]-1, original_pos[1]), (original_pos[0]-1, original_pos[1]+1)]
-
-        bfs_queue = deque()
         
-        for pos in npos_arr:
-            if self.board.get_tile_stack(pos) != None:
-                bfs_queue.append(pos) # add all neighbouring tiles to the queue
+        # Get occupied positions for faster lookup
+        occupied_positions = set(self.board.tile_positions.keys())
         
-        while bfs_queue:
-            pos = bfs_queue.popleft()
-            diff_1 = pos[0] - original_pos[0]
-            diff_2 = pos[1] - original_pos[1]
-
-            if diff_1 != 0:
-                delta_1 = diff_1 // abs(diff_1)
-            else:
-                delta_1 = 0
-            
-            if diff_2 != 0:
-                delta_2 = diff_2 // abs(diff_2)
-            else:
-                delta_2 = 0
-            
-            npos_arr = [(pos[0] + delta_1, pos[1] + delta_2)] # can only travel out in a straight line
-            
-            for pos in npos_arr:
-                if self.board.get_tile_stack(pos) == None:
-                    valid_moves_temp.add(pos) 
-                else:
-                    bfs_queue.append(pos)
-
-        # check if the move is valid by checking if the hive is still connected
-        for move in valid_moves_temp:
-            self.board.move_tile(self, move) 
-            if not self.board.check_unconnected():
-                valid_moves.add(move)
-            self.board.move_tile(self, original_pos)
+        # Get all six neighboring positions - grasshopper can only start jumping from occupied spaces
+        neighbors = [
+            (original_pos[0], original_pos[1]+1), (original_pos[0]+1, original_pos[1]),
+            (original_pos[0]+1, original_pos[1]-1), (original_pos[0], original_pos[1]-1),
+            (original_pos[0]-1, original_pos[1]), (original_pos[0]-1, original_pos[1]+1)
+        ]
+        
+        # Check each of the six directions
+        for pos in neighbors:
+            # Only proceed if there's a piece to jump over
+            if pos in occupied_positions:
+                # Calculate direction vector
+                diff_x = pos[0] - original_pos[0]
+                diff_y = pos[1] - original_pos[1]
+                
+                # Normalize direction
+                delta_x = diff_x // max(1, abs(diff_x)) if diff_x != 0 else 0
+                delta_y = diff_y // max(1, abs(diff_y)) if diff_y != 0 else 0
+                
+                # Start from the neighboring piece
+                current_pos = pos
+                
+                # Keep moving in the same direction until finding an empty space
+                while True:
+                    # Calculate the next position in the same direction
+                    next_pos = (current_pos[0] + delta_x, current_pos[1] + delta_y)
+                    
+                    # If we find an empty spot, it's a valid landing position
+                    if next_pos not in occupied_positions:
+                        valid_moves.add(next_pos)
+                        break
+                    
+                    # Continue in the same direction
+                    current_pos = next_pos
         
         return valid_moves
     
@@ -257,36 +367,57 @@ class Spider(HiveTile):
         super().__init__('spider', player, n, board)
     
     def _calculate_valid_moves(self):
-        """Actual computation function for Spider's valid moves"""
+        """Optimized computation function for Spider's valid moves without temporary board changes"""
         original_pos = self.position
         
         if self.test_breakage(original_pos):
             return set()
             
-        seen = set([self.position])
+        # Get occupied positions for faster lookup
+        occupied_positions = set(self.board.tile_positions.keys())
+        
+        # Track positions we've already processed
+        seen = set([original_pos])
         valid_moves = set()
-        bfs_queue = deque([(original_pos, 0)])
+        
+        # We use a list for BFS queue to track turns
+        bfs_queue = deque([(original_pos, 0)])  # (position, turns)
 
         while bfs_queue:
             pos, turns = bfs_queue.popleft()
-            npos_arr = [((pos[0], pos[1]+1), turns+1), ((pos[0]+1, pos[1]), turns+1), ((pos[0]+1, pos[1]-1), turns+1),
-                        ((pos[0], pos[1]-1), turns+1), ((pos[0]-1, pos[1]), turns+1), ((pos[0]-1, pos[1]+1), turns+1)]
             
-            for i in range(len(npos_arr)):
-                if npos_arr[i][0] not in seen:
-                    if self.board.get_tile_stack(npos_arr[i][0]) == None: # if there is a space to move into
-                        #   check adjacent neighbours to see if there is space to slide
-                        if self.check_slide_space(npos_arr, i):
-                            # check whether tile can be moved without breaking one-hive rule - this applies during move
-                            if self.board.get_tile_stack(npos_arr[(i-1)%6][0]) != self.board.get_tile_stack(npos_arr[(i+1)%6][0]):
-                                self.board.move_tile(self, npos_arr[i][0]) 
-                                if not self.board.check_unconnected():
-                                    if npos_arr[i][1] == 3: # spider must move exactly 3 spaces
-                                        valid_moves.add(npos_arr[i][0])
-                                    elif npos_arr[i][1] < 3: # if spider hasn't moved 3 spaces yet, add to queue
-                                        seen.add(npos_arr[i][0])
-                                        bfs_queue.append(npos_arr[i])
-                                self.board.move_tile(self, original_pos)
+            # Get all six neighboring positions
+            neighbors = [
+                (pos[0], pos[1]+1), (pos[0]+1, pos[1]), (pos[0]+1, pos[1]-1),
+                (pos[0], pos[1]-1), (pos[0]-1, pos[1]), (pos[0]-1, pos[1]+1)
+            ]
+            
+            # Process each neighbor
+            for i, neighbor_pos in enumerate(neighbors):
+                # Skip if already processed
+                if neighbor_pos in seen:
+                    continue
+                
+                # Skip if position is occupied
+                if neighbor_pos in occupied_positions:
+                    continue
+                
+                # Check if sliding is possible (without modifying board state)
+                if not self._can_slide_to(pos, i, neighbors, occupied_positions):
+                    continue
+                
+                # Spider must follow its unique movement rules
+                next_turns = turns + 1
+                
+                # Check if this is a valid final destination (exactly 3 steps)
+                if next_turns == 3:
+                    # Check if move would break hive connectivity
+                    if not self.test_breakage(original_pos):
+                        valid_moves.add(neighbor_pos)
+                # Otherwise, add to queue for further exploration (less than 3 steps)
+                elif next_turns < 3:
+                    seen.add(neighbor_pos)
+                    bfs_queue.append((neighbor_pos, next_turns))
             
         return valid_moves
     
@@ -300,32 +431,41 @@ class Queen(HiveTile):
         super().__init__('queen', player, n, board)
     
     def _calculate_valid_moves(self):
-        """Actual computation function for Queen's valid moves"""
+        """Optimized queen move generation without temporary board state changes"""
         original_pos = self.position
         
         if self.test_breakage(original_pos):
             return set()
 
-        valid_moves_temp = set()
-        valid_moves = set()
-
-        npos_arr = [(original_pos[0], original_pos[1]+1), (original_pos[0]+1, original_pos[1]), 
-                    (original_pos[0]+1, original_pos[1]-1), (original_pos[0], original_pos[1]-1), 
-                    (original_pos[0]-1, original_pos[1]), (original_pos[0]-1, original_pos[1]+1)]
-
-        for i in range(len(npos_arr)):
-            if self.board.get_tile_stack(npos_arr[i]) == None:
-                # check adjacent neighbours to see if sliding is possible
-                if self.board.get_tile_stack(npos_arr[(i-1)%6]) == None or self.board.get_tile_stack(npos_arr[(i+1)%6]) == None:
-                    if self.board.get_tile_stack(npos_arr[(i-1)%6]) != self.board.get_tile_stack(npos_arr[(i+1)%6]):
-                        valid_moves_temp.add(npos_arr[i])
+        # Get occupied positions for faster lookup
+        occupied_positions = set(self.board.tile_positions.keys())
         
-        # check if the move is valid by checking if the hive is still connected after moving
-        for move in valid_moves_temp:
-            self.board.move_tile(self, move)
-            if not self.board.check_unconnected():
-                valid_moves.add(move)
-            self.board.move_tile(self, original_pos)
+        # Get all six neighboring positions
+        neighbors = [
+            (original_pos[0], original_pos[1]+1), (original_pos[0]+1, original_pos[1]),
+            (original_pos[0]+1, original_pos[1]-1), (original_pos[0], original_pos[1]-1),
+            (original_pos[0]-1, original_pos[1]), (original_pos[0]-1, original_pos[1]+1)
+        ]
+        
+        valid_moves = set()
+        
+        # Process each neighbor
+        for i, neighbor_pos in enumerate(neighbors):
+            # Skip if position is occupied
+            if neighbor_pos in occupied_positions:
+                continue
+            
+            # Queen needs at least one empty space on either side to slide
+            left_idx = (i - 1) % 6
+            right_idx = (i + 1) % 6
+            left_pos = neighbors[left_idx]
+            right_pos = neighbors[right_idx]
+            
+            # Check if slide is possible
+            if left_pos not in occupied_positions or right_pos not in occupied_positions:
+                # Additional requirement: positions on either side must not be the same piece
+                if self.board.get_tile_stack(left_pos) != self.board.get_tile_stack(right_pos):
+                    valid_moves.add(neighbor_pos)
         
         return valid_moves
     
