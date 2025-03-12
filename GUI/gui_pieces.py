@@ -34,7 +34,7 @@ class PieceMixin:
             glColor3f(0.15, 0.15, 0.15) #lighter border
             draw_hexagon(x, y, self.width, fill=False)
         
-        # Draw ant at a closer depth
+        # Draw piece at a closer depth
         glPushMatrix()
         glTranslatef(0, 0, 1)
         draw_insect(self.insect, x, y, self.width)
