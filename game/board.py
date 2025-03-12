@@ -3,9 +3,6 @@ from .pieces import Ant, Beetle, Grasshopper, Spider, Queen
 from .ACTIONSPACE import ACTIONSPACE, ACTIONSPACE_INV
 import copy
 
-# Precompute neighbor position deltas for optimization
-NEIGHBOR_DELTAS = [(0, 1), (1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1)]
-
 
 class HiveBoard():
     def __init__(self, max_turns=None, simplified_game=False) -> None:
@@ -35,12 +32,6 @@ class HiveBoard():
 
         # ends game once player gets two pieces around opposing queen
         self.simplified_game = simplified_game
-        
-        # Cache for valid moves to avoid recalculation
-        self._move_cache = {}
-        
-        # Cache for connectivity check results
-        self._connectivity_cache = {}
 
     
     def get_player_turn(self):
@@ -48,10 +39,6 @@ class HiveBoard():
             return 1
         else:
             return 2
-            
-    def get_neighbors(self, position):
-        """Returns the neighboring positions for a given position."""
-        return [(position[0] + dx, position[1] + dy) for dx, dy in NEIGHBOR_DELTAS]
 
     def get_tile_stack(self, position):
         '''Returns the tiles at the given position, or None if there is no tile there.'''
@@ -63,9 +50,6 @@ class HiveBoard():
     def place_tile(self, tile, position: tuple, update_turns: bool = True):
         """Places a tile at the given position on the board. Player
         turns only updated if update_turns is set to true"""
-        # Invalidate caches since board state is changing
-        self._move_cache = {}
-        self._connectivity_cache = {}
         self.tile_positions[position].append(tile)
         tile.position = position
         
@@ -87,10 +71,6 @@ class HiveBoard():
     def move_tile(self, tile, new_position: tuple, update_turns: bool = False):
         """Moves a tile to a new position on the board. Player turns
         are only updated if update turns is set to true"""
-        # Invalidate caches since board state is changing
-        self._move_cache = {}
-        self._connectivity_cache = {}
-        
         # remove tile from old position
         self.tile_positions[tile.position].remove(tile)
         if len(self.tile_positions[tile.position]) == 0:
@@ -133,7 +113,8 @@ class HiveBoard():
         '''Returns True if the tile can be placed at the given position, False otherwise.'''
         valid = True
         connected = False
-        npos_arr = self.get_neighbors(pos)
+        npos_arr = [(pos[0], pos[1]+1), (pos[0]+1, pos[1]), (pos[0]+1, pos[1]-1), # neighbouring positions
+                    (pos[0], pos[1]-1), (pos[0]-1, pos[1]), (pos[0]-1, pos[1]+1)]
         
         if self.player_turns[player - 1] == 0: # first turn for second player must be adjacent to first player's tile
             for npos in npos_arr:
@@ -171,12 +152,14 @@ class HiveBoard():
                 return []
 
         for pos in self.tile_positions:
-            npos_arr = self.get_neighbors(pos)
+            npos_arr = [(pos[0], pos[1]+1), (pos[0]+1, pos[1]), (pos[0]+1, pos[1]-1), 
+                        (pos[0], pos[1]-1), (pos[0]-1, pos[1]), (pos[0]-1, pos[1]+1)]
             for npos in npos_arr:
                 if self.get_tile_stack(npos) == None and npos not in seen:
                     valid = True
                     seen.add(npos)
-                    nnpos_arr = self.get_neighbors(npos)
+                    nnpos_arr = [(npos[0], npos[1]+1), (npos[0]+1, npos[1]), (npos[0]+1, npos[1]-1), 
+                                 (npos[0], npos[1]-1), (npos[0]-1, npos[1]), (npos[0]-1, npos[1]+1)]
                     
                     for nnpos in nnpos_arr:
                         if self.get_tile_stack(nnpos) and self.get_tile_stack(nnpos)[-1].player != player:
@@ -197,11 +180,6 @@ class HiveBoard():
         In this scenario we don't want to begin our dfs from the dummy position
         and must account for it when checking connectedness.
         """
-        # Check if we have a cached result for this board state
-        if dummy_pos is None:
-            board_hash = frozenset(self.tile_positions.keys())
-            if board_hash in self._connectivity_cache:
-                return self._connectivity_cache[board_hash]
         seen = set()
         stack = [list(self.tile_positions.keys())[0]] # start search from a single position
         if stack[0] == dummy_pos:
@@ -211,7 +189,8 @@ class HiveBoard():
         while stack:
             pos = stack.pop()
             seen.add(pos)
-            npos_arr = self.get_neighbors(pos)
+            npos_arr = [(pos[0], pos[1]+1), (pos[0]+1, pos[1]), (pos[0]+1, pos[1]-1), 
+                        (pos[0], pos[1]-1), (pos[0]-1, pos[1]), (pos[0]-1, pos[1]+1)]
             
             for npos in npos_arr:
                 if self.get_tile_stack(npos) and npos not in seen: # if tiles exists at npos and hasn't been visited
@@ -227,15 +206,7 @@ class HiveBoard():
                    
     def valid_move(self, tile, new_position, player):
         '''Returns True if the tile can be moved to the given position, False otherwise.'''
-        # Check if we have valid moves cached for this tile
-        cache_key = (tile.name, frozenset(self.tile_positions.keys()))
-        if cache_key in self._move_cache:
-            valid_moves = self._move_cache[cache_key]
-        else:
-            valid_moves = tile.get_valid_moves()
-            self._move_cache[cache_key] = valid_moves
-            
-        if new_position in valid_moves:
+        if new_position in tile.get_valid_moves():
             return True
         return False
     
@@ -245,6 +216,7 @@ class HiveBoard():
         if tile_name not in self.name_obj_mapping:
             print('Invalid tile name')
             return False
+
         tile = self.name_obj_mapping[tile_name]
         turns = self.player_turns[player-1]
         queen_placed = self.pieces_remaining[player - 1]['queen'] == 0
@@ -298,7 +270,8 @@ class HiveBoard():
         for i, pos in enumerate(self.queen_positions):
             if pos: # if queen has been placed
                 pieces_surrounding = 6
-                npos_arr = self.get_neighbors(pos)
+                npos_arr = [(pos[0], pos[1]+1), (pos[0]+1, pos[1]), (pos[0]+1, pos[1]-1), 
+                            (pos[0], pos[1]-1), (pos[0]-1, pos[1]), (pos[0]-1, pos[1]+1)]
                 
                 surrounded = True
                 for npos in npos_arr:
@@ -362,10 +335,10 @@ class HiveBoard():
         Returns the current game state as a dictionary - to be used 
         by agent
         """
-        # Use simple list copies for primitive data instead of deep copies
-        game_state = {'player_turns': list(self.player_turns),  # Simple list copy
-                      'queen_positions': list(self.queen_positions),  # Simple list copy
-                      'tile_positions': copy.deepcopy(self.tile_positions),  # Still need deepcopy for complex structure
+
+        game_state = {'player_turns': copy.deepcopy(self.player_turns),
+                      'queen_positions': copy.deepcopy(self.queen_positions),
+                      'tile_positions': copy.deepcopy(self.tile_positions),
                       'valid_moves_p1': self.get_legal_actions(1),
                       'valid_moves_p2': self.get_legal_actions(2),
                       'winner': self.game_over()}
@@ -390,10 +363,6 @@ class HiveBoard():
 
     def load_state(self, state: dict):
         """Loads a game state from state dictionary"""
-        # Invalidate all caches since we're completely changing the board state
-        self._move_cache = {}
-        self._connectivity_cache = {}
-        
         # clear current tile positions and player hands
         self.tile_positions.clear()
         self.player1_hand.clear()
@@ -410,6 +379,7 @@ class HiveBoard():
         self.queen_positions = state['queen_positions'].copy()
         self.player_turns = state['player_turns'].copy()
         tile_positions = state['tile_positions']
+
         for pos, tiles in tile_positions.items(): # iterate through tile positions and place tiles
             for tile in tiles:
                 tile_name = tile.name

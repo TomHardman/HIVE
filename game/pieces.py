@@ -1,8 +1,7 @@
 from collections import deque
-from abc import ABC, abstractmethod
 
 
-class HiveTile(ABC): # parent class for all pieces
+class HiveTile: # parent class for all pieces
     def __init__(self, name, player, n, board, beetle=False):
         self.player = player
         self.name = name + str(n) + '_p' + str(player)
@@ -47,11 +46,6 @@ class HiveTile(ABC): # parent class for all pieces
                 return True
             self.board.move_tile(self, original_pos)
         return False
-
-    @abstractmethod
-    def get_valid_moves(self):
-        '''Returns set of valid moves for tile'''
-        pass
 
 
 class Ant(HiveTile):
