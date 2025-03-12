@@ -6,6 +6,11 @@ import copy
 # Precompute neighbor position deltas for optimization
 NEIGHBOR_DELTAS = [(0, 1), (1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1)]
 
+# Global transposition tables for AI search optimization
+# These persist across all board instances and search tree
+_GLOBAL_MOVE_CACHE = {}
+_GLOBAL_CONNECTIVITY_CACHE = {}
+
 
 class HiveBoard():
     def __init__(self, max_turns=None, simplified_game=False) -> None:
@@ -36,12 +41,23 @@ class HiveBoard():
         # ends game once player gets two pieces around opposing queen
         self.simplified_game = simplified_game
         
-        # Cache for valid moves to avoid recalculation
+        # Local caches for valid moves and connectivity checks
         self._move_cache = {}
-        
-        # Cache for connectivity check results
         self._connectivity_cache = {}
+        
+        # Control flag for cache invalidation during AI search
+        # Set to False during minimax to preserve cached results
+        self._invalidate_global_cache = True
 
+    def set_cache_invalidation(self, invalidate: bool):
+        """
+        Set whether global caches should be invalidated when board state changes.
+        Used by AI search algorithms to preserve cached results across the search tree.
+        
+        Args:
+            invalidate: If True, global caches will be invalidated. If False, they will be preserved.
+        """
+        self._invalidate_global_cache = invalidate
     
     def get_player_turn(self):
         if self.player_turns[0] == self.player_turns[1]:
@@ -63,9 +79,15 @@ class HiveBoard():
     def place_tile(self, tile, position: tuple, update_turns: bool = True):
         """Places a tile at the given position on the board. Player
         turns only updated if update_turns is set to true"""
-        # Invalidate caches since board state is changing
+        # Invalidate local caches
         self._move_cache = {}
         self._connectivity_cache = {}
+        
+        # Invalidate global caches if enabled
+        if self._invalidate_global_cache:
+            global _GLOBAL_MOVE_CACHE, _GLOBAL_CONNECTIVITY_CACHE
+            _GLOBAL_MOVE_CACHE = {}
+            _GLOBAL_CONNECTIVITY_CACHE = {}
         self.tile_positions[position].append(tile)
         tile.position = position
         
@@ -87,9 +109,15 @@ class HiveBoard():
     def move_tile(self, tile, new_position: tuple, update_turns: bool = False):
         """Moves a tile to a new position on the board. Player turns
         are only updated if update turns is set to true"""
-        # Invalidate caches since board state is changing
+        # Invalidate local caches
         self._move_cache = {}
         self._connectivity_cache = {}
+        
+        # Invalidate global caches if enabled
+        if self._invalidate_global_cache:
+            global _GLOBAL_MOVE_CACHE, _GLOBAL_CONNECTIVITY_CACHE
+            _GLOBAL_MOVE_CACHE = {}
+            _GLOBAL_CONNECTIVITY_CACHE = {}
         
         # remove tile from old position
         self.tile_positions[tile.position].remove(tile)
@@ -197,11 +225,25 @@ class HiveBoard():
         In this scenario we don't want to begin our dfs from the dummy position
         and must account for it when checking connectedness.
         """
-        # Check if we have a cached result for this board state
-        if dummy_pos is None:
-            board_hash = frozenset(self.tile_positions.keys())
-            if board_hash in self._connectivity_cache:
-                return self._connectivity_cache[board_hash]
+        # Generate a comprehensive hash of the current board state
+        # This captures not just which positions are occupied, but by what pieces
+        board_state = []
+        for pos, tiles in self.tile_positions.items():
+            # Include position and all pieces at that position (preserving stack order)
+            board_state.append((pos, tuple(tile.name for tile in tiles)))
+        
+        # Convert to frozenset for hashability
+        board_hash = frozenset(board_state)
+        
+        # Check local cache first
+        if dummy_pos is None and board_hash in self._connectivity_cache:
+            return self._connectivity_cache[board_hash]
+        
+        # Then check global cache
+        if dummy_pos is None and board_hash in _GLOBAL_CONNECTIVITY_CACHE:
+            # Store in local cache for faster future access
+            self._connectivity_cache[board_hash] = _GLOBAL_CONNECTIVITY_CACHE[board_hash]
+            return _GLOBAL_CONNECTIVITY_CACHE[board_hash]
         seen = set()
         stack = [list(self.tile_positions.keys())[0]] # start search from a single position
         if stack[0] == dummy_pos:
@@ -223,17 +265,42 @@ class HiveBoard():
         elif dummy_pos and len(seen) == len(self.tile_positions) - 1:
             connected = True
         
-        return not connected
+        # Cache the result both locally and globally if not using a dummy position
+        if dummy_pos is None:
+            result = not connected
+            self._connectivity_cache[board_hash] = result
+            _GLOBAL_CONNECTIVITY_CACHE[board_hash] = result
+            return result
+        else:
+            return not connected
                    
     def valid_move(self, tile, new_position, player):
         '''Returns True if the tile can be moved to the given position, False otherwise.'''
-        # Check if we have valid moves cached for this tile
-        cache_key = (tile.name, frozenset(self.tile_positions.keys()))
+        # Generate a comprehensive cache key based on tile and complete board state
+        # This captures not just occupied positions but what pieces are where
+        board_state = []
+        for pos, tiles in self.tile_positions.items():
+            # Include position and all pieces at that position (preserving stack order)
+            board_state.append((pos, tuple(tile.name for tile in tiles)))
+        
+        # The cache key combines the specific tile and the complete board state
+        cache_key = (tile.name, frozenset(board_state))
+        print("Cache Length;")
+        print(len(_GLOBAL_MOVE_CACHE))
+        
+        # Check local cache first
         if cache_key in self._move_cache:
             valid_moves = self._move_cache[cache_key]
+        # Then check global cache
+        elif cache_key in _GLOBAL_MOVE_CACHE:
+            valid_moves = _GLOBAL_MOVE_CACHE[cache_key]
+            # Store in local cache for faster future access
+            self._move_cache[cache_key] = valid_moves
         else:
+            # Calculate and cache the valid moves
             valid_moves = tile.get_valid_moves()
             self._move_cache[cache_key] = valid_moves
+            _GLOBAL_MOVE_CACHE[cache_key] = valid_moves
             
         if new_position in valid_moves:
             return True
@@ -390,9 +457,15 @@ class HiveBoard():
 
     def load_state(self, state: dict):
         """Loads a game state from state dictionary"""
-        # Invalidate all caches since we're completely changing the board state
+        # Invalidate local caches
         self._move_cache = {}
         self._connectivity_cache = {}
+        
+        # Invalidate global caches if enabled
+        if self._invalidate_global_cache:
+            global _GLOBAL_MOVE_CACHE, _GLOBAL_CONNECTIVITY_CACHE
+            _GLOBAL_MOVE_CACHE = {}
+            _GLOBAL_CONNECTIVITY_CACHE = {}
         
         # clear current tile positions and player hands
         self.tile_positions.clear()
@@ -418,6 +491,15 @@ class HiveBoard():
     
     def undo_move(self, tile, old_position=None):
         """Undoes a move"""
+        # Invalidate local caches
+        self._move_cache = {}
+        self._connectivity_cache = {}
+        
+        # Invalidate global caches if enabled
+        if self._invalidate_global_cache:
+            global _GLOBAL_MOVE_CACHE, _GLOBAL_CONNECTIVITY_CACHE
+            _GLOBAL_MOVE_CACHE = {}
+            _GLOBAL_CONNECTIVITY_CACHE = {}
         if old_position == None: # tile was placed
             self.tile_positions[tile.position].pop()
             if len(self.tile_positions[tile.position]) == 0:
