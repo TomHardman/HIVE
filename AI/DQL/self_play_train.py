@@ -39,11 +39,6 @@ def update(q_network, target_network, experience_replay, batch_size,
 
             predictions.append(pred)
             tgts.append(y)
-
-            """optimizer.zero_grad() 
-            loss = criterion(pred, y)
-            loss.backward()
-            optimizer.step()"""
     
     # Convert lists to tensors for computing loss
     predictions = torch.stack(predictions)

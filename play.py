@@ -32,7 +32,7 @@ def play(args):
         # Heuristic Agent
         params = Params(queen_surrounding_reward=1, win_reward=100, ownership_reward=5,
                         mp_reward=0.5)
-        heuristic_agent = HeuristicAgent(2, 2, params, board)
+        heuristic_agent = HeuristicAgent(2, 3, params, board)
         gui.set_player(2, agent=heuristic_agent)
     
     gui.show()

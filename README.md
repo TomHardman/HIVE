@@ -9,6 +9,6 @@ To play with minimax bot:
 To play with random bot:
     python play.py --mode random
 
-To play player vs player
+To play player vs player:
     python play.py
 
