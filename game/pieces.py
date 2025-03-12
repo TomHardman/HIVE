@@ -1,9 +1,5 @@
 from collections import deque
 from abc import ABC, abstractmethod
-import functools
-
-# Global cache for moves across all instances and search
-_TILE_MOVE_CACHE = {}
 
 
 class HiveTile(ABC): # parent class for all pieces
@@ -52,42 +48,6 @@ class HiveTile(ABC): # parent class for all pieces
             self.board.move_tile(self, original_pos)
         return False
 
-    def _get_board_hash(self):
-        """Generate a comprehensive hash of the current board state for caching"""
-        board_state = []
-        for pos, tiles in self.board.tile_positions.items():
-            # Include position and all pieces at that position (preserving stack order)
-            board_state.append((pos, tuple(tile.name for tile in tiles)))
-        
-        # Convert to frozenset for hashability
-        return frozenset(board_state)
-    
-    def _cached_valid_moves(self, calculation_function):
-        """
-        Cache wrapper for valid moves calculations.
-        Uses both local and global caches for optimal performance.
-        """
-        # Skip caching if piece is covered or queen not placed
-        if self.covered() or not self.queen_placed():
-            return set()
-            
-        # Create a comprehensive key that uniquely identifies this piece and board state
-        board_hash = self._get_board_hash()
-        cache_key = (self.name, board_hash)
-        
-        # Check global cache first (persists across search tree)
-        print(len(_TILE_MOVE_CACHE))
-        if cache_key in _TILE_MOVE_CACHE:
-            return _TILE_MOVE_CACHE[cache_key]
-        
-        # Calculate moves if not in cache
-        valid_moves = calculation_function()
-        
-        # Store in both caches
-        _TILE_MOVE_CACHE[cache_key] = valid_moves
-        
-        return valid_moves
-    
     @abstractmethod
     def get_valid_moves(self):
         '''Returns set of valid moves for tile'''
@@ -98,8 +58,10 @@ class Ant(HiveTile):
     def __init__(self, player, n, board):
         super().__init__('ant', player, n, board)
     
-    def _calculate_valid_moves(self):
-        """Actual computation function for Ant's valid moves"""
+    def get_valid_moves(self):
+        if self.covered() or not self.queen_placed():
+            return set()
+
         original_pos = self.position
 
         if self.test_breakage(original_pos):
@@ -128,18 +90,16 @@ class Ant(HiveTile):
                                     bfs_queue.append(npos_arr[i]) 
                                 self.board.move_tile(self, original_pos) 
         return valid_moves
-    
-    def get_valid_moves(self):
-        """Returns set of valid moves for Ant, using caching"""
-        return self._cached_valid_moves(self._calculate_valid_moves)
         
 
 class Beetle(HiveTile):
     def __init__(self, player, n, board):
         super().__init__('beetle', player, n, board, beetle=True)
     
-    def _calculate_valid_moves(self):
-        """Actual computation function for Beetle's valid moves"""
+    def get_valid_moves(self):
+        if self.covered() or not self.queen_placed():
+            return set()
+        
         original_pos = self.position
         
         if self.test_breakage(original_pos):
@@ -148,6 +108,7 @@ class Beetle(HiveTile):
         valid_moves_temp = set()
         valid_moves = set()
 
+        original_pos = self.position
         npos_arr = [(original_pos[0], original_pos[1]+1), (original_pos[0]+1, original_pos[1]), 
                     (original_pos[0]+1, original_pos[1]-1), (original_pos[0], original_pos[1]-1), 
                     (original_pos[0]-1, original_pos[1]), (original_pos[0]-1, original_pos[1]+1)]
@@ -185,18 +146,16 @@ class Beetle(HiveTile):
             self.board.move_tile(self, original_pos)
         
         return valid_moves
-    
-    def get_valid_moves(self):
-        """Returns set of valid moves for Beetle, using caching"""
-        return self._cached_valid_moves(self._calculate_valid_moves)
 
 
 class Grasshopper(HiveTile):
     def __init__(self, player, n, board):
         super().__init__('grasshopper', player, n, board)
     
-    def _calculate_valid_moves(self):
-        """Actual computation function for Grasshopper's valid moves"""
+    def get_valid_moves(self):
+        if self.covered() or not self.queen_placed():
+            return set()
+        
         original_pos = self.position
         
         if self.test_breakage(original_pos):
@@ -246,18 +205,16 @@ class Grasshopper(HiveTile):
             self.board.move_tile(self, original_pos)
         
         return valid_moves
-    
-    def get_valid_moves(self):
-        """Returns set of valid moves for Grasshopper, using caching"""
-        return self._cached_valid_moves(self._calculate_valid_moves)
                 
 
 class Spider(HiveTile):
     def __init__(self, player, n, board):
         super().__init__('spider', player, n, board)
     
-    def _calculate_valid_moves(self):
-        """Actual computation function for Spider's valid moves"""
+    def get_valid_moves(self):
+        if self.covered() or not self.queen_placed():
+                return set()
+        
         original_pos = self.position
         
         if self.test_breakage(original_pos):
@@ -289,18 +246,16 @@ class Spider(HiveTile):
                                 self.board.move_tile(self, original_pos)
             
         return valid_moves
-    
-    def get_valid_moves(self):
-        """Returns set of valid moves for Spider, using caching"""
-        return self._cached_valid_moves(self._calculate_valid_moves)
 
 
 class Queen(HiveTile):
     def __init__(self, player, n, board):
         super().__init__('queen', player, n, board)
     
-    def _calculate_valid_moves(self):
-        """Actual computation function for Queen's valid moves"""
+    def get_valid_moves(self):
+        if self.covered() or not self.queen_placed():
+            return set()
+
         original_pos = self.position
         
         if self.test_breakage(original_pos):
@@ -309,6 +264,7 @@ class Queen(HiveTile):
         valid_moves_temp = set()
         valid_moves = set()
 
+        original_pos = self.position
         npos_arr = [(original_pos[0], original_pos[1]+1), (original_pos[0]+1, original_pos[1]), 
                     (original_pos[0]+1, original_pos[1]-1), (original_pos[0], original_pos[1]-1), 
                     (original_pos[0]-1, original_pos[1]), (original_pos[0]-1, original_pos[1]+1)]
@@ -328,9 +284,5 @@ class Queen(HiveTile):
             self.board.move_tile(self, original_pos)
         
         return valid_moves
-    
-    def get_valid_moves(self):
-        """Returns set of valid moves for Queen, using caching"""
-        return self._cached_valid_moves(self._calculate_valid_moves)
 
         

@@ -23,12 +23,6 @@ def minimax(board: HiveBoard, depth, is_maximizing, player, eval_params,
     """
     global states_count
     states_count += 1 
-    
-    # Disable cache invalidation during search to preserve calculated moves
-    # This is critical for performance as it allows reuse of calculated moves
-    # across the entire search tree, even for identical positions reached through
-    # different move sequences
-    board.set_cache_invalidation(False)
 
     # Base case: check if the game is over or depth limit reached
     if board.game_over() or depth == 0:
@@ -72,10 +66,6 @@ def minimax(board: HiveBoard, depth, is_maximizing, player, eval_params,
             if beta <= alpha:
                 break  # Alpha cutoff
         
-        # Re-enable cache invalidation when we're done with the search
-        if depth == 0:
-            board.set_cache_invalidation(True)
-            
         return min_eval, best_move
 
 
@@ -100,10 +90,6 @@ def beam_minimax(board: HiveBoard, depth, is_maximizing, player, eval_params,
     """
     global states_count
     states_count += 1
-    
-    # Disable cache invalidation during search to preserve calculated moves
-    # This allows reuse of calculated moves across the entire search tree
-    board.set_cache_invalidation(False)
 
     # Base case: check if the game is over or depth limit reached
     if board.game_over() or depth == 0:
@@ -163,10 +149,6 @@ def beam_minimax(board: HiveBoard, depth, is_maximizing, player, eval_params,
             if beta <= alpha:
                 break  # Alpha cutoff
 
-        # Re-enable cache invalidation when we're done with the search
-        if depth == 0:
-            board.set_cache_invalidation(True)
-            
         return min_eval, best_move
 
 

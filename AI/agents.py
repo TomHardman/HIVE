@@ -88,19 +88,9 @@ class HeuristicAgent(Agent):
         Get possible actions from board and evaluate each action using
         minimax with alpha beta pruning. Returns best action.
         """
-        # Create a deep copy of the board for search
         board = copy.deepcopy(self.board)
-        
-        # Disable cache invalidation for the AI search to preserve calculations
-        # across the search tree, significantly improving performance
-        board.set_cache_invalidation(False)
-        
-        # Perform minimax search
         state = self.board.get_game_state(self.player) 
         max_eval, best_move = beam_minimax(board, self.depth, True, self.player, self.eval_params, float('-inf'), float('inf'))
-        
-        # Re-enable cache invalidation after search completes
-        board.set_cache_invalidation(True)
         if best_move:
             pos, tile_idx = best_move
             piece_id = ACTIONSPACE_INV[tile_idx]
