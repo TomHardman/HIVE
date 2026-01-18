@@ -1,0 +1,8 @@
+[
+{
+  "directory": "/Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build",
+  "command": "/usr/bin/c++ -DFMT_SHARED -isystem /opt/homebrew/include -std=gnu++20 -arch arm64 -o CMakeFiles/Experimentation.dir/Experimentation.cpp.o -c /Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/Experimentation.cpp",
+  "file": "/Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/Experimentation.cpp",
+  "output": "CMakeFiles/Experimentation.dir/Experimentation.cpp.o"
+}
+]
