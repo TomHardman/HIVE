@@ -9,10 +9,25 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Find fmt library
 find_package(fmt REQUIRED)
 
-# Experimentation executable
+# Hive Game Library (core game logic)
+add_library(HiveGame
+    Game.cpp
+    MoveFetcher.cpp
+    Controller.cpp
+)
+
+target_link_libraries(HiveGame PRIVATE fmt::fmt)
+
+# Experimentation executable (for testing)
 add_executable(Experimentation
     Experimentation.cpp
 )
 
-target_link_libraries(Experimentation PRIVATE fmt::fmt)
+target_link_libraries(Experimentation PRIVATE fmt::fmt HiveGame)
 
+# Example executable (demonstrates architecture)
+add_executable(HiveExample
+    example.cpp
+)
+
+target_link_libraries(HiveExample PRIVATE fmt::fmt HiveGame)
