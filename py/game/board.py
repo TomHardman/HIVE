@@ -296,7 +296,7 @@ class HiveBoard():
             elif surrounding[0] > surrounding[1]:
                 return 2
             else:
-                return f'Draw {surrounding[0]}, {surrounding[1]}'
+                return 0
 
         return False
     

@@ -26,7 +26,7 @@ def create_agent(agent_type: str, player: int, reduced: bool = False) -> Agent |
     match agent_type:
         case 'dqn':
             dqn = DQN_simple(13 if reduced else 25)
-            dqn.load_state_dict(torch.load('/Users/tomhardman/Documents/Projects/HIVE/HIVE/py/models/simplified3_at124000.pt'))
+            dqn.load_state_dict(torch.load('models/vs_random_it58000_nonzero_32.5.pt'))
             return DQLAgent(player, dqn, 0, reduced=reduced)
 
         case 'random':
@@ -107,7 +107,7 @@ if __name__ == '__main__':
                         help="Agent type for player 1: 'dqn', 'random', or 'mm'")
     parser.add_argument('--player2', type=str, default='random',
                         help="Agent type for player 2: 'dqn', 'random', or 'mm'")
-    parser.add_argument('--games', type=int, default=10,
+    parser.add_argument('--games', type=int, default=20,
                         help='Number of games to simulate')
     parser.add_argument('--reduced', action='store_true',
                         help='Use reduced feature set for DQL agents')

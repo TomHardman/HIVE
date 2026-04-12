@@ -6,7 +6,7 @@ from GUI import HiveGUI
 from game import HiveBoard
 from AI.agents import Agent, RandomAgent, DQLAgent, HeuristicAgent
 from AI.minimax import Params
-from AI.DQL import DQN, DQN_gat
+from AI.DQL import DQN, DQN_gat, DQN_simple
 
 import torch
 
@@ -26,8 +26,8 @@ def create_agent(agent_type: str, player: int, board: HiveBoard, reduced: bool =
     """
     match agent_type:
         case 'dqn':
-            dqn = DQN(13 if reduced else 25)
-            dqn.load_state_dict(torch.load('/Users/tomhardman/Documents/Projects/HIVE/HIVE/py/models/simplified3_at40000.pt'))
+            dqn = DQN_simple(13 if reduced else 25)
+            dqn.load_state_dict(torch.load('models/dqn_vs_dqn_simplified_it88000_nonzero_55.2.pt'))
             return DQLAgent(player, dqn, 0, board, reduced=reduced)
 
         case 'random':
@@ -45,7 +45,7 @@ def create_agent(agent_type: str, player: int, board: HiveBoard, reduced: bool =
 
 
 def play(args):
-    board = HiveBoard()
+    board = HiveBoard(simplified_game=args.simplified)
     app = QtWidgets.QApplication(sys.argv)
     gui = HiveGUI(board, rl_debug=False)
 
@@ -70,7 +70,7 @@ if __name__ == '__main__':
                         help="Agent type for player 2: 'dqn', 'random', 'mm', or None for human")
     parser.add_argument('--reduced', action='store_true',
                         help='Use reduced feature set for DQL agents')
-    parser.add_argument('--simplified', type=bool, default=False,
+    parser.add_argument('--simplified', action='store_true',
                         help='Whether to play simplfied game - 3 pieces surrounding Queen is win condition')
     args = parser.parse_args()
     play(args)
