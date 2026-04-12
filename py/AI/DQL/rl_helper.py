@@ -44,8 +44,9 @@ class LossBuffer:
 
 
 class RewardCalculator:
-    def __init__(self, rewards_dict: dict):
+    def __init__(self, rewards_dict: dict, debug=False):
         self.rewards_dict = rewards_dict
+        self.debug = debug
 
     def pieces_around_queen(self, player, state, opp=False):
         """
@@ -97,7 +98,7 @@ class RewardCalculator:
                     moveable_pieces_set.add(idx)
         return len(moveable_pieces_set)
 
-    def reward_queen_surrounding(self, player, s, s_prime):
+    def reward_queen_surrounding(self, player, s, s_prime, debug=False):
         """
         If player manages to increase number of (own) pieces around opposition's
         queen between s and s_prime, positive reward is given - vice versa
@@ -111,8 +112,26 @@ class RewardCalculator:
         n_s_opp = self.pieces_around_queen(opp, s, opp=True)
         n_s_prime_opp = self.pieces_around_queen(opp, s_prime, opp=True)
 
-        #return (n_s_prime_opp - n_s_opp) - (n_s_prime_self - n_s_self)
-        return (n_s_prime_opp - n_s_opp)
+        reward = (n_s_prime_opp - n_s_opp)
+
+        if debug and reward != 0:
+            player_queen_pos = s['queen_positions'][player - 1]
+            opp_queen_pos = s['queen_positions'][opp - 1]
+            player_queen_pos_prime = s_prime['queen_positions'][player - 1]
+            opp_queen_pos_prime = s_prime['queen_positions'][opp - 1]
+            print(f"\n[DEBUG reward_queen_surrounding]")
+            print(f"  Player {player} queen: {player_queen_pos}")
+            print(f"  Player {opp} queen: {opp_queen_pos}")
+            print(f"  Player {player} queen (next): {player_queen_pos_prime}")
+            print(f"  Player {opp} queen (next): {opp_queen_pos_prime}")
+            print(f"  Pieces around OPPONENT's queen: {n_s_opp} -> {n_s_prime_opp} (reward={reward})")
+            print(f"  Pieces around OWN queen: {n_s_self} -> {n_s_prime_self}")
+            # Print actual tile positions
+            print(f"  Tiles on board (s): {list(s['tile_positions'].keys())}")
+            print(f"  Tiles on board (s_prime): {list(s_prime['tile_positions'].keys())}")
+            print(f"  Difference: {set(s['tile_positions']) ^ set(s_prime['tile_positions'])}")
+
+        return reward
 
     def reward_change_in_moves(self, player, s, s_prime):
         """
@@ -177,9 +196,13 @@ class RewardCalculator:
         reward = 0
 
         for key in self.rewards_dict.keys():
-            reward += self.rewards_dict[key] * getattr(self, 'reward_' + key)(player, s, s_prime)
-            #print(key, getattr(self, 'reward_' + key)(player, s, s_prime), self.rewards_dict[key] * getattr(self, 'reward_' + key)(player, s, s_prime))
-        #print(f'Reward {reward}')
+            method = getattr(self, 'reward_' + key)
+            # Special case for reward_queen_surrounding to pass debug flag
+            if key == 'queen_surrounding':
+                component_reward = method(player, s, s_prime, debug=self.debug)
+            else:
+                component_reward = method(player, s, s_prime)
+            reward += self.rewards_dict[key] * component_reward
         return reward
     
     def __call__(self, player, s, s_prime):
