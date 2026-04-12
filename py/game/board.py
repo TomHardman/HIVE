@@ -285,9 +285,9 @@ class HiveBoard():
                 return 2 if i == 0 else 1
         
         if self.simplified_game:
-            if surrounding[0] >= 3 and 3 > surrounding[1]:
+            if surrounding[1] >= 3 and 3 > surrounding[0]:
                 return 1
-            elif surrounding[1] >= 3 and 3 > surrounding[0]:
+            elif surrounding[0] >= 3 and 3 > surrounding[1]:
                 return 2
                 
         if self.max_turns and self.player_turns[0] >= self.max_turns and self.player_turns[1] >= self.max_turns:
