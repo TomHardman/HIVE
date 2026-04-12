@@ -291,9 +291,9 @@ class HiveBoard():
                 return 2
                 
         if self.max_turns and self.player_turns[0] >= self.max_turns and self.player_turns[1] >= self.max_turns:
-            if surrounding[0] > surrounding[1]:
+            if surrounding[1] > surrounding[0]:
                 return 1
-            elif surrounding[0] < surrounding[1]:
+            elif surrounding[0] > surrounding[1]:
                 return 2
             else:
                 return f'Draw {surrounding[0]}, {surrounding[1]}'

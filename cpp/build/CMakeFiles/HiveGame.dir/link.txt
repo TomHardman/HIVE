@@ -1,0 +1,2 @@
+/usr/bin/ar qc libHiveGame.a CMakeFiles/HiveGame.dir/Game.cpp.o CMakeFiles/HiveGame.dir/MoveFetcher.cpp.o CMakeFiles/HiveGame.dir/Controller.cpp.o
+/usr/bin/ranlib libHiveGame.a

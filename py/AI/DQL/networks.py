@@ -17,7 +17,7 @@ class DQN(torch.nn.Module):
 
         self.alt = alt
         self.linear_alt = torch.nn.Linear(11, 1)
-    
+
 
     def forward(self, data: Data):
         x, edge_index, edge_attr = data.x, data.edge_index, data.edge_attr
@@ -32,7 +32,7 @@ class DQN(torch.nn.Module):
 
         nan_mask = torch.isnan(x)
         contains_nan = torch.any(nan_mask)
-    
+
         if contains_nan:
             print('Contains NaN')
 
@@ -40,7 +40,7 @@ class DQN(torch.nn.Module):
             x = self.linear_alt(x)
             x = F.softmax(x, dim=0)
             return x
-    
+
         return x + (action_mask - 1) * 1000
 
 
@@ -52,7 +52,7 @@ class DQN_gat(torch.nn.Module):
         self.gat3 = GATConv(hidden_dim * num_heads, hidden_dim, heads=num_heads, dropout=dropout)
         self.gat4 = GATConv(hidden_dim * num_heads, output_dim, heads=1, dropout=dropout)  # Only 1 head in final layer
         self.linear = torch.nn.Linear(22, hidden_dim)
-    
+
 
     def forward(self, data: Data):
         x, edge_index = data.x, data.edge_index
@@ -67,8 +67,30 @@ class DQN_gat(torch.nn.Module):
 
         nan_mask = torch.isnan(x)
         contains_nan = torch.any(nan_mask)
-    
+
         if contains_nan:
             print('Contains NaN')
-    
+
+        return x + (action_mask - 1) * 1000
+
+
+class DQN_simple(torch.nn.Module):
+    """Single-layer GCN: directly map node features to Q-values."""
+    def __init__(self, input_dim, output_dim=11):
+        super().__init__()
+        self.conv = GCNConv(input_dim, output_dim, add_self_loops=True)
+        self.linear = torch.nn.Linear(22, output_dim)
+
+    def forward(self, data: Data):
+        x, edge_index, edge_attr = data.x, data.edge_index, data.edge_attr
+        u = data.u
+        action_mask = data.action_mask
+
+        x = self.conv(x, edge_index, edge_attr)
+        x = x + F.relu(self.linear(u))
+
+        nan_mask = torch.isnan(x)
+        if torch.any(nan_mask):
+            print('Contains NaN')
+
         return x + (action_mask - 1) * 1000

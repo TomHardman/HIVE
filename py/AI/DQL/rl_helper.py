@@ -222,14 +222,16 @@ class ExperienceReplay:
         self.memory = [] # ring buffer for O(1) sampling and appending
         self.reward_memory = [] # only remembers experiences with rewards
         self.position = 0
+        self.reward_position = 0
 
     def push(self, transition: Transition):
         if len(self.memory) < self.capacity:
             self.memory.append(None)
         self.memory[self.position] = transition
+        self.position = (self.position + 1) % self.capacity
         if transition.reward != 0:
             self.reward_memory.append(transition)
-        self.position = (self.position + 1) % self.capacity
+            self.reward_position = (self.reward_position + 1) % self.capacity
 
     def sample(self, batch_size):
         sample = random.sample(self.memory, batch_size//2) + random.sample(self.reward_memory, min(batch_size//2, len(self.reward_memory)))

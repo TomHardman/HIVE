@@ -1,8 +1,32 @@
 [
 {
   "directory": "/Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build",
-  "command": "/usr/bin/c++ -DFMT_SHARED -isystem /opt/homebrew/include -std=gnu++20 -arch arm64 -o CMakeFiles/Experimentation.dir/Experimentation.cpp.o -c /Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/Experimentation.cpp",
+  "command": "/usr/bin/c++ -DFMT_SHARED -isystem /opt/homebrew/include -std=gnu++20 -o CMakeFiles/HiveGame.dir/Game.cpp.o -c /Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/Game.cpp",
+  "file": "/Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/Game.cpp",
+  "output": "CMakeFiles/HiveGame.dir/Game.cpp.o"
+},
+{
+  "directory": "/Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build",
+  "command": "/usr/bin/c++ -DFMT_SHARED -isystem /opt/homebrew/include -std=gnu++20 -o CMakeFiles/HiveGame.dir/MoveFetcher.cpp.o -c /Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/MoveFetcher.cpp",
+  "file": "/Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/MoveFetcher.cpp",
+  "output": "CMakeFiles/HiveGame.dir/MoveFetcher.cpp.o"
+},
+{
+  "directory": "/Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build",
+  "command": "/usr/bin/c++ -DFMT_SHARED -isystem /opt/homebrew/include -std=gnu++20 -o CMakeFiles/HiveGame.dir/Controller.cpp.o -c /Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/Controller.cpp",
+  "file": "/Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/Controller.cpp",
+  "output": "CMakeFiles/HiveGame.dir/Controller.cpp.o"
+},
+{
+  "directory": "/Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build",
+  "command": "/usr/bin/c++ -DFMT_SHARED -isystem /opt/homebrew/include -std=gnu++20 -o CMakeFiles/Experimentation.dir/Experimentation.cpp.o -c /Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/Experimentation.cpp",
   "file": "/Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/Experimentation.cpp",
   "output": "CMakeFiles/Experimentation.dir/Experimentation.cpp.o"
+},
+{
+  "directory": "/Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build",
+  "command": "/usr/bin/c++ -DFMT_SHARED -isystem /opt/homebrew/include -std=gnu++20 -o CMakeFiles/HiveExample.dir/example.cpp.o -c /Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/example.cpp",
+  "file": "/Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/example.cpp",
+  "output": "CMakeFiles/HiveExample.dir/example.cpp.o"
 }
 ]

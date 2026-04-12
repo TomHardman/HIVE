@@ -5,7 +5,7 @@ from collections import defaultdict
 
 from PyQt5 import QtGui       # extends QtCore with GUI functionality
 from PyQt5 import QtWidgets
-from PyQt5 import QtOpenGL 
+from PyQt5 import QtOpenGL
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import QEventLoop
@@ -18,6 +18,7 @@ from .drawing import draw_hexagon
 from game import HiveBoard, ACTIONSPACE
 from .PX_SCALE import PX_SCALE
 from AI.DQL import ExperienceReplay, RewardCalculator, get_graph_from_state, REWARDS_DICT, Transition
+from AI.agents import Agent
 
 
 class HiveGUI(QtWidgets.QMainWindow):   
@@ -51,7 +52,17 @@ class HiveGUI(QtWidgets.QMainWindow):
             self.replay = ExperienceReplay(capacity=1000) 
             self.reward_calc = RewardCalculator(rewards_dict=REWARDS_DICT)
     
-    def set_player(self, player, agent):
+    def set_player(self, player: int, agent: Agent) -> None:
+        """
+        Set an AI agent for a specific player.
+
+        Args:
+            player: Player number (1 or 2)
+            agent: Agent instance to control this player
+
+        Raises:
+            ValueError: If player is not 1 or 2
+        """
         if player == 1:
             self.player1 = agent
         elif player == 2:

@@ -23,7 +23,7 @@ int main() {
     
     // Example: Try to place a queen at origin
     fmt::print("\nAttempting to place Player 1's Queen at (0, 0)...\n");
-    bool success = game.place(Insect::QUEEN, Position(0, 0));
+    bool success = game.place(Insect::QUEEN, Position{0, 0});
     fmt::print("Placement {}\n", success ? "succeeded" : "failed");
     
     if (success) {

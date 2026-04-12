@@ -52,5 +52,7 @@ set(CMAKE_MAKEFILE_PRODUCTS
 
 # Dependency information for all targets:
 set(CMAKE_DEPEND_INFO_FILES
+  "CMakeFiles/HiveGame.dir/DependInfo.cmake"
   "CMakeFiles/Experimentation.dir/DependInfo.cmake"
+  "CMakeFiles/HiveExample.dir/DependInfo.cmake"
   )

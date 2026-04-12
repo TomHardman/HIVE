@@ -14,31 +14,31 @@ Game::Game(int max_turns, bool simplified_game)
 // ============= Private Initialization =============
 
 void Game::initializeHands() {
-    for (int player = 1; player <= 2; ++player) {
-        auto& hand = player_hands_[player - 1];
+    for (int player = 1; player <= 2; player++) {
+        auto& hand = player_hands_.at(player - 1);
         
-        // Add 3 ants
-        for (int i = 0; i < 3; ++i) {
-            hand.insert(HiveTile(player, Insect::ANT));
+        // Add 3 ants (id: 1, 2, 3)
+        for (int i = 1; i <= 3; ++i) {
+            hand.insert(HiveTile(player, Insect::ANT, i));
         }
         
-        // Add 3 grasshoppers
-        for (int i = 0; i < 3; ++i) {
-            hand.insert(HiveTile(player, Insect::GRASSHOPPER));
+        // Add 3 grasshoppers (id: 1, 2, 3)
+        for (int i = 1; i <= 3; ++i) {
+            hand.insert(HiveTile(player, Insect::GRASSHOPPER, i));
         }
         
-        // Add 2 beetles
-        for (int i = 0; i < 2; ++i) {
-            hand.insert(HiveTile(player, Insect::BEETLE));
+        // Add 2 beetles (id: 1, 2)
+        for (int i = 1; i <= 2; ++i) {
+            hand.insert(HiveTile(player, Insect::BEETLE, i));
         }
         
-        // Add 2 spiders
-        for (int i = 0; i < 2; ++i) {
-            hand.insert(HiveTile(player, Insect::SPIDER));
+        // Add 2 spiders (id: 1, 2)
+        for (int i = 1; i <= 2; ++i) {
+            hand.insert(HiveTile(player, Insect::SPIDER, i));
         }
         
-        // Add 1 queen
-        hand.insert(HiveTile(player, Insect::QUEEN));
+        // Add 1 queen (id: 1)
+        hand.insert(HiveTile(player, Insect::QUEEN, 1));
     }
 }
 
@@ -46,11 +46,11 @@ void Game::initializeHands() {
 
 int Game::getCurrentPlayer() const {
     // Player whose turn it is
-    return (player_turns_[0] == player_turns_[1]) ? 1 : 2;
+    return (player_turns_.at(0) == player_turns_.at(1)) ? 1 : 2;
 }
 
 bool Game::hasPlacedQueen(int player) const {
-    return queen_positions_[player - 1].has_value();
+    return queen_positions_.at(player - 1).has_value();
 }
 
 std::vector<Position> Game::getValidPlacements(Insect insect) const {
@@ -104,13 +104,22 @@ int Game::checkGameOver() const {
 
 bool Game::place(Insect insect, const Position& position) {
     int player = getCurrentPlayer();
-    auto& hand = player_hands_[player - 1];
+    auto& hand = player_hands_.at(player - 1);
     
-    // Check if player has this piece in hand
-    HiveTile tile(player, insect);
-    if (hand.find(tile) == hand.end()) {
-        return false;  // Piece not in hand
+    // Find first available piece of this type in hand
+    HiveTile* tile_ptr = nullptr;
+    for (auto& tile : hand) {
+        if (tile.insect == insect) {
+            tile_ptr = const_cast<HiveTile*>(&tile);
+            break;
+        }
     }
+    
+    if (!tile_ptr) {
+        return false;  // No piece of this type in hand
+    }
+    
+    HiveTile tile = *tile_ptr;
     
     // Check if placement is valid
     if (!isValidPlacement(position, player)) {
@@ -118,7 +127,7 @@ bool Game::place(Insect insect, const Position& position) {
     }
     
     // Queen placement rule: must place queen by turn 3 (4th turn)
-    if (player_turns_[player - 1] == 3 && !hasPlacedQueen(player) && insect != Insect::QUEEN) {
+    if (player_turns_.at(player - 1) == 3 && !hasPlacedQueen(player) && insect != Insect::QUEEN) {
         return false;  // Must place queen now
     }
     
@@ -128,11 +137,11 @@ bool Game::place(Insect insect, const Position& position) {
     
     // Update queen position if placing queen
     if (insect == Insect::QUEEN) {
-        queen_positions_[player - 1] = position;
+        queen_positions_.at(player - 1) = position;
     }
     
     // Increment turn
-    player_turns_[player - 1]++;
+    player_turns_.at(player - 1)++;
     
     return true;
 }
@@ -163,12 +172,12 @@ bool Game::move(const Position& from_position, const Position& to_position) {
     
     // Update queen position if moving queen
     if (tile.insect == Insect::QUEEN) {
-        queen_positions_[tile.player - 1] = to_position;
+        queen_positions_.at(tile.player - 1) = to_position;
     }
     
     // Increment turn
     int player = getCurrentPlayer();
-    player_turns_[player - 1]++;
+    player_turns_.at(player - 1)++;
     
     return true;
 }

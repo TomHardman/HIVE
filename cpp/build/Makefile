@@ -117,6 +117,19 @@ depend:
 .PHONY : depend
 
 #=============================================================================
+# Target rules for targets named HiveGame
+
+# Build rule for target.
+HiveGame: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 HiveGame
+.PHONY : HiveGame
+
+# fast build rule for target.
+HiveGame/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/HiveGame.dir/build.make CMakeFiles/HiveGame.dir/build
+.PHONY : HiveGame/fast
+
+#=============================================================================
 # Target rules for targets named Experimentation
 
 # Build rule for target.
@@ -128,6 +141,43 @@ Experimentation: cmake_check_build_system
 Experimentation/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Experimentation.dir/build.make CMakeFiles/Experimentation.dir/build
 .PHONY : Experimentation/fast
+
+#=============================================================================
+# Target rules for targets named HiveExample
+
+# Build rule for target.
+HiveExample: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 HiveExample
+.PHONY : HiveExample
+
+# fast build rule for target.
+HiveExample/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/HiveExample.dir/build.make CMakeFiles/HiveExample.dir/build
+.PHONY : HiveExample/fast
+
+Controller.o: Controller.cpp.o
+.PHONY : Controller.o
+
+# target to build an object file
+Controller.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/HiveGame.dir/build.make CMakeFiles/HiveGame.dir/Controller.cpp.o
+.PHONY : Controller.cpp.o
+
+Controller.i: Controller.cpp.i
+.PHONY : Controller.i
+
+# target to preprocess a source file
+Controller.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/HiveGame.dir/build.make CMakeFiles/HiveGame.dir/Controller.cpp.i
+.PHONY : Controller.cpp.i
+
+Controller.s: Controller.cpp.s
+.PHONY : Controller.s
+
+# target to generate assembly for a file
+Controller.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/HiveGame.dir/build.make CMakeFiles/HiveGame.dir/Controller.cpp.s
+.PHONY : Controller.cpp.s
 
 Experimentation.o: Experimentation.cpp.o
 .PHONY : Experimentation.o
@@ -153,6 +203,78 @@ Experimentation.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Experimentation.dir/build.make CMakeFiles/Experimentation.dir/Experimentation.cpp.s
 .PHONY : Experimentation.cpp.s
 
+Game.o: Game.cpp.o
+.PHONY : Game.o
+
+# target to build an object file
+Game.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/HiveGame.dir/build.make CMakeFiles/HiveGame.dir/Game.cpp.o
+.PHONY : Game.cpp.o
+
+Game.i: Game.cpp.i
+.PHONY : Game.i
+
+# target to preprocess a source file
+Game.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/HiveGame.dir/build.make CMakeFiles/HiveGame.dir/Game.cpp.i
+.PHONY : Game.cpp.i
+
+Game.s: Game.cpp.s
+.PHONY : Game.s
+
+# target to generate assembly for a file
+Game.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/HiveGame.dir/build.make CMakeFiles/HiveGame.dir/Game.cpp.s
+.PHONY : Game.cpp.s
+
+MoveFetcher.o: MoveFetcher.cpp.o
+.PHONY : MoveFetcher.o
+
+# target to build an object file
+MoveFetcher.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/HiveGame.dir/build.make CMakeFiles/HiveGame.dir/MoveFetcher.cpp.o
+.PHONY : MoveFetcher.cpp.o
+
+MoveFetcher.i: MoveFetcher.cpp.i
+.PHONY : MoveFetcher.i
+
+# target to preprocess a source file
+MoveFetcher.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/HiveGame.dir/build.make CMakeFiles/HiveGame.dir/MoveFetcher.cpp.i
+.PHONY : MoveFetcher.cpp.i
+
+MoveFetcher.s: MoveFetcher.cpp.s
+.PHONY : MoveFetcher.s
+
+# target to generate assembly for a file
+MoveFetcher.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/HiveGame.dir/build.make CMakeFiles/HiveGame.dir/MoveFetcher.cpp.s
+.PHONY : MoveFetcher.cpp.s
+
+example.o: example.cpp.o
+.PHONY : example.o
+
+# target to build an object file
+example.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/HiveExample.dir/build.make CMakeFiles/HiveExample.dir/example.cpp.o
+.PHONY : example.cpp.o
+
+example.i: example.cpp.i
+.PHONY : example.i
+
+# target to preprocess a source file
+example.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/HiveExample.dir/build.make CMakeFiles/HiveExample.dir/example.cpp.i
+.PHONY : example.cpp.i
+
+example.s: example.cpp.s
+.PHONY : example.s
+
+# target to generate assembly for a file
+example.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/HiveExample.dir/build.make CMakeFiles/HiveExample.dir/example.cpp.s
+.PHONY : example.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -162,9 +284,23 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... Experimentation"
+	@echo "... HiveExample"
+	@echo "... HiveGame"
+	@echo "... Controller.o"
+	@echo "... Controller.i"
+	@echo "... Controller.s"
 	@echo "... Experimentation.o"
 	@echo "... Experimentation.i"
 	@echo "... Experimentation.s"
+	@echo "... Game.o"
+	@echo "... Game.i"
+	@echo "... Game.s"
+	@echo "... MoveFetcher.o"
+	@echo "... MoveFetcher.i"
+	@echo "... MoveFetcher.s"
+	@echo "... example.o"
+	@echo "... example.i"
+	@echo "... example.s"
 .PHONY : help
 
 

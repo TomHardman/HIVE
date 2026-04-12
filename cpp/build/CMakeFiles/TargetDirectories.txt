@@ -1,3 +1,5 @@
+/Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build/CMakeFiles/HiveGame.dir
 /Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build/CMakeFiles/Experimentation.dir
+/Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build/CMakeFiles/HiveExample.dir
 /Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build/CMakeFiles/edit_cache.dir
 /Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build/CMakeFiles/rebuild_cache.dir

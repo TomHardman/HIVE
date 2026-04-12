@@ -191,21 +191,4 @@ private:
     int countSurroundingPieces(const Position& pos) const;
 };
 
-/**
- * Hash function for HiveTile to use in unordered_set
- * 
- * DESIGN DECISION: Hashing based on player and insect type.
- * Since there are multiple ants/beetles per player, you might want to add
- * a unique ID field to HiveTile if you need to distinguish between them.
- * For now, assuming piece type + player is sufficient as identifier.
- */
-namespace std {
-    template <>
-    struct hash<HiveTile> {
-        std::size_t operator()(const HiveTile& tile) const {
-            return std::hash<int>()(tile.player) ^ 
-                   (std::hash<int>()(static_cast<int>(tile.insect)) << 1);
-        }
-    };
-}
 
