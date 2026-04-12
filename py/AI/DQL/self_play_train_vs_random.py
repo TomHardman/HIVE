@@ -107,7 +107,7 @@ def update(q_network, target_network, experience_replay, batch_size,
 
 def main(args):
     replay = ExperienceReplay(args.capacity)
-    reward_calc = RewardCalculator(REWARDS_DICT)
+    reward_calc = RewardCalculator(REWARDS_DICT, debug=args.debug)
     loss_buffer = LossBuffer()
 
     if args.reduced:
@@ -136,8 +136,9 @@ def main(args):
 
     # Reward tracking
     reward_history = []
+    results = []
     nonzero_reward_count = 0
-    best_nonzero_pct = 0.0
+    best_avg_reward = float('-inf')
 
     while i < args.max_iter:
         board = HiveBoard(max_turns=100, simplified_game=args.simplified_game)
@@ -176,7 +177,8 @@ def main(args):
             i += 1
 
             if i % args.DQN_update_freq == 0:
-                debug_update = (i % (args.DQN_update_freq * 10) == 0)  # Debug every 10 updates
+                #debug_update = (i % (args.DQN_update_freq * 10) == 0)  # Debug every 10 updates
+                debug_update = False
                 loss = update(dqn, tgt_qn, replay, args.batch_size, args.gamma, optimizer, criterion, debug=debug_update)
                 if debug_update and loss:
                     print(f'  Total Loss: {loss}')
@@ -185,32 +187,37 @@ def main(args):
                 tgt_qn.load_state_dict(dqn.state_dict())
 
             if i % 1000 == 0:
-                rl_agent.epsilon = max(0.1, rl_agent.epsilon - 0.01)
+                rl_agent.epsilon = max(0.1, rl_agent.epsilon - 0.004)
 
                 # Log reward statistics
                 avg_reward = sum(reward_history) / len(reward_history) if reward_history else 0
                 nonzero_pct = 100 * nonzero_reward_count / len(reward_history) if reward_history else 0
+                win_rate = (results.count(1) / len(results)) if results else 0.0
                 print(f'=== Iteration {i} ===')
                 print(f'Avg reward per transition: {avg_reward:.4f}')
+                print(f'Games Played: {len(results)}')
+                print(f'Win rate: {win_rate:.1%}')
                 print(f'Non-zero rewards: {nonzero_pct:.1f}% ({nonzero_reward_count}/{len(reward_history)})')
                 print(f'Epsilon: {rl_agent.epsilon:.3f}')
                 print(f'Loss: {loss}, Avg Loss: {loss_buffer.avg}')
 
-                # Save model if new best
-                if nonzero_pct > best_nonzero_pct:
-                    best_nonzero_pct = nonzero_pct
+                # Save model if new best average reward
+                if avg_reward > best_avg_reward:
+                    best_avg_reward = avg_reward
                     torch.save(
                         dqn.state_dict(),
-                        args.save_path + 'vs_random_it' + str(i) + '_nonzero_' + str(round(nonzero_pct, 4)) + '.pt'
+                        args.save_path + '_vs_random_gamma_' + str(args.gamma) + '_it_' + str(i) + '_avg_reward_' + str(round(avg_reward, 4)) + '.pt'
                     )
-                    print(f'✓ New best! Saved model (nonzero_pct: {nonzero_pct:.1f}%)')
+                    print(f'✓ New best! Saved model (avg_reward: {avg_reward:.4f})')
                 else:
-                    print(f'  (No save - best is still {best_nonzero_pct:.1f}%)')
+                    print(f'  (No save - best is still {best_avg_reward:.4f})')
 
                 reward_history = []
+                results = []
                 nonzero_reward_count = 0
 
         game_n += 1
+        results.append(result)
 
     torch.save(dqn.state_dict(), args.save_path + 'vs_random_final_' + str(i) + '.pt')
 
@@ -218,17 +225,18 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train a DQN agent to play Hive against a random opponent')
     parser.add_argument('--batch_size', type=int, default=25, help='Batch size for updates')
-    parser.add_argument('--model_path', type=str, default='', help='Path to pretrained model')
+    parser.add_argument('--model_path', type=str, default='models/simplified_sur_only_vs_random_gamma_0.8_it_284000_winrate_0.9192.pt', help='Path to pretrained model')
     parser.add_argument('--DQN_update_freq', type=int, default=25, help='Update frequency')
     parser.add_argument('--target_update_freq', type=int, default=10000, help='Target network update frequency')
-    parser.add_argument('--gamma', type=float, default=0, help='Discount factor')
-    parser.add_argument('--learning_rate', type=float, default=5e-3, help='Learning rate')
+    parser.add_argument('--gamma', type=float, default=0.9, help='Discount factor')
+    parser.add_argument('--learning_rate', type=float, default=5e-4, help='Learning rate')
     parser.add_argument('--epsilon', type=float, default=0.9, help='Initial epsilon for epsilon-greedy')
     parser.add_argument('--capacity', type=int, default=10000, help='Replay buffer capacity')
-    parser.add_argument('--max_iter', type=int, default=300000, help='Maximum iterations')
+    parser.add_argument('--max_iter', type=int, default=10000000, help='Maximum iterations')
     parser.add_argument('--save_path', type=str, default='models/', help='Path to save models')
     parser.add_argument('--simplified_game', action='store_true', help='Use simplified game rules')
     parser.add_argument('--reduced', action='store_true', help='Use reduced feature set')
+    parser.add_argument('--debug', action='store_true', help='Enable debug logging for rewards')
 
     args = parser.parse_args()
     main(args)

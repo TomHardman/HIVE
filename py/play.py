@@ -27,7 +27,7 @@ def create_agent(agent_type: str, player: int, board: HiveBoard, reduced: bool =
     match agent_type:
         case 'dqn':
             dqn = DQN_simple(13 if reduced else 25)
-            dqn.load_state_dict(torch.load('models/dqn_vs_dqn_simplified_it88000_nonzero_55.2.pt'))
+            dqn.load_state_dict(torch.load('models/simplified_sur_only_vs_random_gamma_0.8_it_284000_winrate_0.9192.pt'))
             return DQLAgent(player, dqn, 0, board, reduced=reduced)
 
         case 'random':

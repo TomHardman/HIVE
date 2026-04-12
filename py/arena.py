@@ -26,7 +26,7 @@ def create_agent(agent_type: str, player: int, reduced: bool = False) -> Agent |
     match agent_type:
         case 'dqn':
             dqn = DQN_simple(13 if reduced else 25)
-            dqn.load_state_dict(torch.load('models/vs_random_it58000_nonzero_32.5.pt'))
+            dqn.load_state_dict(torch.load('models/simplified_vs_random_gamma_0.8_it_198000_winrate_0.9149.pt'))
             return DQLAgent(player, dqn, 0, reduced=reduced)
 
         case 'random':

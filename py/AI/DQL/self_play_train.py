@@ -206,7 +206,8 @@ def main(args):
             i += 1
 
             if i % args.DQN_update_freq == 0:
-                debug_update = (i % (args.DQN_update_freq * 10) == 0)  # Debug every 10 updates
+                #debug_update = (i % (args.DQN_update_freq * 10) == 0)  # Debug every 10 updates
+                debug_update = False
                 loss = update(dqn, tgt_qn, replay, args.batch_size, args.gamma, optimizer, criterion, debug=debug_update)
                 #alt_loss = udpate_alt(alt_network, replay, args.batch_size, optimizer_alt, criterion)
                 #loss_buffer.push(loss)
@@ -228,7 +229,7 @@ def main(args):
                 print(f'Non-zero rewards: {nonzero_pct:.1f}% ({nonzero_reward_count}/{len(reward_history)})')
                 print(f'Epsilon: {rl_agent1.epsilon:.3f}')
                 print(f'Loss: {loss}, Avg Loss: {loss_buffer.avg}')
-
+ 
                 # Save model if new best
                 if nonzero_pct > best_nonzero_pct:
                     best_nonzero_pct = nonzero_pct
@@ -244,7 +245,7 @@ def main(args):
                 nonzero_reward_count = 0
 
         game_n += 1
-        #print(f'Game Over: {result} wins! Game reward: {game_reward}, Steps: {game_steps}')
+        print(f'Game Over: {result} wins! Game reward: {game_reward}, Steps: {game_steps}')
 
     torch.save(dqn.state_dict(), args.save_path + 'dqn_' + str(i) + '.pt')
 
