@@ -1,6 +1,5 @@
 import sys
 import math
-import time
 from collections import defaultdict
 
 from PyQt5 import QtGui       # extends QtCore with GUI functionality
@@ -8,7 +7,6 @@ from PyQt5 import QtWidgets
 from PyQt5 import QtOpenGL
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication
-from PyQt5.QtCore import QEventLoop
 
 import OpenGL.GL as gl
 from OpenGL import GLU
@@ -40,6 +38,12 @@ class HiveGUI(QtWidgets.QMainWindow):
         self.splitter.addWidget(self.selection_canvas)
         self.setCentralWidget(self.splitter)
 
+        # Toolbar for AI turn control
+        self.toolbar = self.addToolBar("Controls")
+        self.next_turn_btn = QtWidgets.QAction("Next Turn", self)
+        self.next_turn_btn.triggered.connect(self.step_ai_turn)
+        self.toolbar.addAction(self.next_turn_btn)
+
         # player attributes to store if a certain player is an artificial agent
         self.player1 = None
         self.player2 = None
@@ -49,8 +53,11 @@ class HiveGUI(QtWidgets.QMainWindow):
         # RL debugging
         self.rl_debug = rl_debug
         if rl_debug:
-            self.replay = ExperienceReplay(capacity=1000) 
+            self.replay = ExperienceReplay(capacity=1000)
             self.reward_calc = RewardCalculator(rewards_dict=REWARDS_DICT)
+
+        # Initialize button state
+        self._update_button_state()
     
     def set_player(self, player: int, agent: Agent) -> None:
         """
@@ -69,29 +76,29 @@ class HiveGUI(QtWidgets.QMainWindow):
             self.player2 = agent
         else:
             raise ValueError(f'{player} not a valid player number')
+        self._update_button_state()
         
-    def update_GUI(self):
+    def refresh_display(self):
+        """Refresh the display and update game state (rendering only, no AI execution)."""
         self.board_canvas.update()
         self.selection_canvas.update()
         self.check_game_over()
+        self._update_button_state()
 
-        if self.player1 and self.player_turn==1:
-            QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)
-            time.sleep(1)
-            action = self.player1.sample_action()
-            self.update_from_board()
-            self.update_memory(action)
-        
-        if self.player2 and self.player_turn==2:
-            QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)
-            time.sleep(1)
-            action = self.player2.sample_action()
-            self.update_from_board()
-            self.update_memory(action)
-        
-        self.board_canvas.update()
-        self.selection_canvas.update()
-        self.check_game_over()
+    def step_ai_turn(self):
+        """Execute one AI turn for the current player."""
+        agent = self.player1 if self.player_turn == 1 else self.player2
+        if agent is None:
+            return
+        action = agent.sample_action()
+        self.update_from_board()
+        self.update_memory(action)
+        self.refresh_display()
+
+    def _update_button_state(self):
+        """Update the Next Turn button enabled/disabled state."""
+        agent = self.player1 if self.player_turn == 1 else self.player2
+        self.next_turn_btn.setEnabled(agent is not None)
 
     @property
     def player_turn(self):
@@ -272,12 +279,12 @@ class BoardCanvas(QtOpenGL.QGLWidget):
         self.mouse_x = event.x()
         self.mouse_y = event.y()
         self.contains_mouse = True
-        
-        # if mouse is within board canvas, update board canvas to not show tile being placed 
+
+        # if mouse is within board canvas, update board canvas to not show tile being placed
         if self.mouse_y > self.parent.selection_canvas.height():
             self.parent.selection_canvas.contains_mouse = False
-        
-        self.parent.update_GUI() # Trigger paint event
+
+        self.parent.refresh_display() # Trigger paint event
     
     def mousePressEvent(self, event):
         if self.parent.moving_tile:
@@ -331,8 +338,8 @@ class BoardCanvas(QtOpenGL.QGLWidget):
                 self.parent.moving_tile = tile_clicked
 
             self.dragging = True
-                
-        self.parent.update_GUI()
+
+        self.parent.refresh_display()
 
     def mouseReleaseEvent(self, event):
         self.dragging = False
@@ -454,11 +461,11 @@ class SelectionCanvas(QtOpenGL.QGLWidget):
         self.mouse_y = event.y()
         self.contains_mouse = True
 
-        # if mouse is within selection canvas, update board canvas to not show tile being placed  
+        # if mouse is within selection canvas, update board canvas to not show tile being placed
         if self.mouse_y < self.parent.selection_canvas.height():
             self.parent.board_canvas.contains_mouse = False
-        
-        self.parent.update_GUI() # Trigger paint event
+
+        self.parent.refresh_display() # Trigger paint event
     
     def mousePressEvent(self, event):
         # Check if a button is clicked
@@ -474,7 +481,7 @@ class SelectionCanvas(QtOpenGL.QGLWidget):
                 self.parent.placing_tile = None
         else:
             self.parent.placing_tile = None
-        self.parent.update_GUI() # Trigger paint event
+        self.parent.refresh_display() # Trigger paint event
 
     def get_button_clicked(self, x, y):
         if self.parent.player_turn == 1:
