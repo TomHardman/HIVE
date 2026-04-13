@@ -36,8 +36,49 @@ bool Game::hasPlacedQueen(int player) const {
 }
 
 std::vector<Position> Game::getValidPlacements(Insect insect) const {
-    // TODO: Implement valid placement logic
-    return {};
+    int player = getCurrentPlayer();
+
+    // First move of the game: player 1 places at origin
+    if (player_turns_.at(0) == 0 && player_turns_.at(1) == 0)
+        return {Position{0, 0}};
+
+    // Player's first move: any position adjacent to existing tiles
+    if (player_turns_.at(player - 1) == 0) {
+        std::unordered_set<Position> candidates;
+        for (const auto& [pos, tiles] : tile_positions_) {
+            for (const auto& neighbor : MoveFetcher::getNeighbors(pos)) {
+                if (tile_positions_.find(neighbor) == tile_positions_.end())
+                    candidates.insert(neighbor);
+            }
+        }
+        return std::vector<Position>(candidates.begin(), candidates.end());
+    }
+
+    // Must place queen by turn 4 (0-indexed turn 3)
+    if (player_turns_.at(player - 1) == 3 && !hasPlacedQueen(player) && insect != Insect::QUEEN)
+        return {};
+
+    // Standard: adjacent to own pieces, not adjacent to any opponent piece
+    std::unordered_set<Position> candidates;
+    for (const auto& [pos, tiles] : tile_positions_) {
+        if (tiles.empty() || tiles.back().player != player) continue;
+        for (const auto& neighbor : MoveFetcher::getNeighbors(pos)) {
+            if (tile_positions_.find(neighbor) != tile_positions_.end()) continue; // occupied
+
+            bool adj_to_opponent = false;
+            for (const auto& n2 : MoveFetcher::getNeighbors(neighbor)) {
+                auto it = tile_positions_.find(n2);
+                if (it != tile_positions_.end() && !it->second.empty()
+                    && it->second.back().player != player) {
+                    adj_to_opponent = true;
+                    break;
+                }
+            }
+            if (!adj_to_opponent)
+                candidates.insert(neighbor);
+        }
+    }
+    return std::vector<Position>(candidates.begin(), candidates.end());
 }
 
 std::vector<Position> Game::getValidMoves(const Position& position) const {
@@ -92,10 +133,26 @@ std::vector<Action> Game::getLegalActions() const {
 }
 
 int Game::checkGameOver() const {
-    // TODO: Implement win condition checking
-    // - Queen surrounded by 6 pieces = loss (3 in simplified mode)
-    // - Both queens surrounded simultaneously = draw
-    // - max_turns_ reached: fewer surrounding pieces wins
+    int threshold = simplified_game_ ? 3 : 6;
+
+    bool p1_surrounded = queen_positions_.at(0).has_value()
+        && countSurroundingPieces(*queen_positions_.at(0)) >= threshold;
+    bool p2_surrounded = queen_positions_.at(1).has_value()
+        && countSurroundingPieces(*queen_positions_.at(1)) >= threshold;
+
+    if (p1_surrounded && p2_surrounded) return 0; // simultaneous — draw
+    if (p1_surrounded) return 2;
+    if (p2_surrounded) return 1;
+
+    // Max turns reached: player with fewer pieces around their queen wins
+    if (max_turns_ > 0 && player_turns_.at(0) + player_turns_.at(1) >= max_turns_ * 2) {
+        int p1 = queen_positions_.at(0).has_value() ? countSurroundingPieces(*queen_positions_.at(0)) : 0;
+        int p2 = queen_positions_.at(1).has_value() ? countSurroundingPieces(*queen_positions_.at(1)) : 0;
+        if (p1 < p2) return 1;
+        if (p2 < p1) return 2;
+        return 0;
+    }
+
     return 0;
 }
 
