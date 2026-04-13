@@ -54,8 +54,8 @@ std::vector<Position> Game::getValidPlacements(Insect insect) const {
         return std::vector<Position>(candidates.begin(), candidates.end());
     }
 
-    // Must place queen by turn 4 (0-indexed turn 3)
-    if (player_turns_.at(player - 1) == 3 && !hasPlacedQueen(player) && insect != Insect::QUEEN)
+    // Must place queen by turn 3 (0-indexed turn 2)
+    if (player_turns_.at(player - 1) == 2 && !hasPlacedQueen(player) && insect != Insect::QUEEN)
         return {};
 
     // Standard: adjacent to own pieces, not adjacent to any opponent piece
