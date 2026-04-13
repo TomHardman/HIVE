@@ -9,186 +9,147 @@
 #include <optional>
 
 /**
- * Game: Main model class managing game state
- * 
- * DESIGN DECISIONS:
- * 1. Using std::array<T, 2> for player-specific data (index 0 = player 1, index 1 = player 2)
- *    - More type-safe than raw arrays
- *    - Bounds checking in debug mode
- *    - Clear intent: exactly 2 players
- * 
- * 2. Using std::optional<Position> for queen positions
- *    - Handles "queen not yet placed" case explicitly
- *    - More expressive than nullptr or sentinel values
- * 
- * 3. Tile positions map uses vector<HiveTile> for stacks
- *    - Beetles can climb, so positions can have multiple tiles
- *    - Vector is efficient for small stacks (usually 1-2 tiles)
- * 
- * 4. Player hands are unordered_set<HiveTile>
- *    - Fast lookup and removal
- *    - No duplicates (each tile is unique)
+ * Maps tile_idx (0-10) to (Insect type, instance id).
+ * This is the single unified action representation used by all agents.
+ *
+ * Matches Python ACTIONSPACE:
+ *   queen=0, spider1=1, spider2=2, beetle1=3, beetle2=4,
+ *   ant1=5, ant2=6, ant3=7, grasshopper1=8, grasshopper2=9, grasshopper3=10
+ *
+ * For placements: the highest-id instance of that insect type remaining in hand
+ * is always used (matching the Python pieces_remaining convention).
+ * For movements: tile_idx identifies the specific piece on the board to move.
+ */
+inline constexpr std::array<std::pair<Insect, int>, 11> TILE_IDX_MAP = {{
+    {Insect::QUEEN,       1},  // 0
+    {Insect::SPIDER,      1},  // 1
+    {Insect::SPIDER,      2},  // 2
+    {Insect::BEETLE,      1},  // 3
+    {Insect::BEETLE,      2},  // 4
+    {Insect::ANT,         1},  // 5
+    {Insect::ANT,         2},  // 6
+    {Insect::ANT,         3},  // 7
+    {Insect::GRASSHOPPER, 1},  // 8
+    {Insect::GRASSHOPPER, 2},  // 9
+    {Insect::GRASSHOPPER, 3},  // 10
+}};
+
+/**
+ * Unified action type used by all agents and returned by getBestMove.
+ *
+ * tile_idx identifies the specific piece instance via TILE_IDX_MAP.
+ * to is the destination position for both placements and movements.
+ *
+ * Whether the action is a placement or movement is determined at runtime
+ * by checking if the piece is currently in hand or on the board.
+ */
+struct Action {
+    int tile_idx;  // 0-10
+    Position to;
+
+    bool operator==(const Action& other) const {
+        return tile_idx == other.tile_idx && to == other.to;
+    }
+};
+
+
+/**
+ * Game: Main model class managing game state.
+ *
+ * All mutation goes through apply_action/undo, which use tile_idx as the
+ * primary action representation. This keeps the interface consistent with
+ * the DQL network's output space and the minimax search's action type.
  */
 class Game {
 public:
     // ============= Constructor =============
-    
-    /**
-     * Initialize game with starting pieces in hands
-     * 
-     * DESIGN DECISION: Taking max_turns and simplified_game as optional parameters
-     * to match Python implementation for AI training scenarios
-     */
+
     Game(int max_turns = -1, bool simplified_game = false);
-    
+
     // ============= Game State Queries =============
-    
+
     /**
-     * Gets valid placement positions for current player
-     * Takes into account queen placement rules and adjacency requirements
-     * 
-     * @param insect Type of insect being placed
-     * @return Vector of valid positions
+     * Gets valid placement positions for the current player for a given insect type.
      */
     std::vector<Position> getValidPlacements(Insect insect) const;
-    
+
     /**
-     * Gets valid moves for a tile at given position
-     * 
-     * DESIGN DECISION: This wraps MoveFetcher but adds game-context checks:
-     * - Queen must be placed before moving
-     * - Tile must belong to current player
-     * - Tile must not be covered
-     * 
-     * @param position Position of tile to move
-     * @return Vector of valid destination positions
+     * Gets valid move destinations for the tile at the given position.
+     * Returns empty if: no tile there, wrong player, queen not placed, or tile is covered.
      */
     std::vector<Position> getValidMoves(const Position& position) const;
-    
+
     /**
-     * Gets all legal actions for current player
-     * Used by AI agents to explore action space
-     * 
-     * DESIGN DECISION: Return type to be determined based on how you want to
-     * represent actions. Options:
-     * - vector<pair<Position, HiveTile>> for placements + moves
-     * - Custom Action struct
-     * - Map<Position, vector<Insect>> similar to Python
-     * 
-     * TODO: Clarify desired return type and structure
+     * Returns all legal actions for the current player.
+     * For placements, uses the highest-id instance of each insect type in hand.
+     * For movements, uses the tile_idx of the top tile at each occupied position.
      */
-    // std::vector<Action> getLegalActions() const;  // Placeholder
-    
+    std::vector<Action> getLegalActions() const;
+
     /**
-     * Checks if game is over and returns winner
-     * 
-     * @return 0 if game not over, 1 if player 1 wins, 2 if player 2 wins
+     * Returns 0 if game is ongoing, 1 if player 1 wins, 2 if player 2 wins.
      */
     int checkGameOver() const;
-    
+
     /**
-     * Gets current player (1 or 2)
+     * Returns the current player (1 or 2).
      */
     int getCurrentPlayer() const;
-    
+
     // ============= Game Actions =============
-    
+
     /**
-     * Places a tile from hand onto the board
-     * Updates game state: removes from hand, adds to board, increments turn
-     * 
-     * @param insect Type of insect to place
-     * @param position Where to place it
-     * @return true if placement was valid and successful
-     * 
-     * DESIGN DECISION: Returns bool for success/failure rather than throwing
-     * exceptions for invalid moves. This is more efficient for AI move validation.
+     * Applies an action to the game state.
+     *
+     * Returns the tile's original board position if the action was a movement
+     * (needed to undo it), or std::nullopt if it was a placement.
+     *
+     * Behaviour is undefined if the action is not in getLegalActions().
      */
-    bool place(Insect insect, const Position& position);
-    
+    std::optional<Position> apply_action(const Action& action);
+
     /**
-     * Moves a tile from one position to another
-     * Updates game state and increments turn
-     * 
-     * @param from_position Current tile position
-     * @param to_position Destination position
-     * @return true if move was valid and successful
+     * Undoes a previously applied action.
+     * original_pos must be the exact value returned by apply_action for that action.
      */
-    bool move(const Position& from_position, const Position& to_position);
-    
-    // ============= State Access (for View/Controller) =============
-    
-    /**
-     * Get read-only access to tile positions
-     * View layer needs this for rendering
-     */
+    void undo(const Action& action, const std::optional<Position>& original_pos);
+
+    // ============= State Access =============
+
     const std::unordered_map<Position, std::vector<HiveTile>>& getTilePositions() const {
         return tile_positions_;
     }
-    
-    /**
-     * Get player hands (read-only)
-     */
     const std::array<std::unordered_set<HiveTile>, 2>& getPlayerHands() const {
         return player_hands_;
     }
-    
-    /**
-     * Get queen positions
-     */
     const std::array<std::optional<Position>, 2>& getQueenPositions() const {
         return queen_positions_;
     }
-    
-    /**
-     * Get player turns
-     */
     const std::array<int, 2>& getPlayerTurns() const {
         return player_turns_;
     }
-    
+
 private:
-    // ============= Game State =============
-    
-    // Player hands: pieces not yet placed
+    // ============= State =============
+
     std::array<std::unordered_set<HiveTile>, 2> player_hands_;
-    
-    // Queen positions (optional because queens may not be placed yet)
     std::array<std::optional<Position>, 2> queen_positions_;
-    
-    // Board state: position -> stack of tiles (vector for beetles climbing)
     std::unordered_map<Position, std::vector<HiveTile>> tile_positions_;
-    
-    // Turn counters for each player
     std::array<int, 2> player_turns_;
-    
-    // Game configuration
     int max_turns_;
     bool simplified_game_;
-    
-    // ============= Private Helper Methods =============
-    
-    /**
-     * Initializes player hands with starting pieces
-     * 3 ants, 3 grasshoppers, 2 beetles, 2 spiders, 1 queen per player
-     */
+
+    // ============= Private Helpers =============
+
     void initializeHands();
-    
-    /**
-     * Checks if a placement position is valid for given player
-     * Handles adjacency rules and first-turn special cases
-     */
     bool isValidPlacement(const Position& pos, int player) const;
-    
-    /**
-     * Checks if player has placed their queen
-     */
     bool hasPlacedQueen(int player) const;
-    
-    /**
-     * Counts pieces surrounding a position (for win condition)
-     */
     int countSurroundingPieces(const Position& pos) const;
+
+    // Low-level primitives used by apply_action and undo (no turn increment)
+    void placeTile(const HiveTile& tile, const Position& pos);
+    void moveTile(const HiveTile& tile, const Position& from, const Position& to);
+
+    // Returns tile_idx for a given (insect, id) pair, or -1 if not found
+    static int tileToIdx(Insect insect, int id);
 };
-
-
