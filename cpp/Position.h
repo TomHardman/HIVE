@@ -3,10 +3,9 @@
 
 /**
  * Position struct for hexagonal grid coordinates using axial coordinate system
- * (q, r) where q is the column and r is the row
- * 
- * DESIGN DECISION: Using axial coordinates (q, r) instead of cube coordinates
- * because they're more memory-efficient (2 ints vs 3) and sufficient for Hive.
+ * (q, r). q aligned (low left to up right) diagonal, r aligned with vertical
+ * TODO: These are non-standard but setup to be consistent with python implementation
+ *       will change
  */
 struct Position {
     int q;  // column coordinate

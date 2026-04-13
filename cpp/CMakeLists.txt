@@ -13,7 +13,6 @@ find_package(fmt REQUIRED)
 add_library(HiveGame
     Game.cpp
     MoveFetcher.cpp
-    Controller.cpp
 )
 
 target_link_libraries(HiveGame PRIVATE fmt::fmt)

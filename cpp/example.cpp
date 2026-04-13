@@ -1,5 +1,4 @@
 #include "Game.h"
-#include "Controller.h"
 #include <iostream>
 #include <fmt/format.h>
 
@@ -36,10 +35,6 @@ int main() {
         }
     }
     
-    // Create Controller (minimal for now)
-    Controller controller(game);
-    fmt::print("\nController created\n");
-    
     // Display board state
     fmt::print("\nBoard state:\n");
     const auto& tile_positions = game.getTilePositions();
@@ -64,11 +59,9 @@ int main() {
     }
     
     fmt::print("\n=== Architecture Features ===\n");
-    fmt::print("✓ MVC pattern: Model (Game), View (TileRenderer), Controller\n");
     fmt::print("✓ Pure data tiles: No position duplication\n");
     fmt::print("✓ Single source of truth: Position in Game only\n");
-    fmt::print("✓ Tag dispatch: Compile-time polymorphism\n");
-    fmt::print("✓ Namespace utilities: MoveFetcher, TileRenderer\n");
+    fmt::print("✓ Namespace utilities: MoveFetcher\n");
     
     return 0;
 }

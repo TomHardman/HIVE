@@ -11,18 +11,12 @@ std::vector<Position> getValidMoves(
     const HiveTile& tile,
     const TilePositions& tile_positions
 ) {
-    // Tag dispatch based on insect type
     switch (tile.insect) {
-        case Insect::ANT:
-            return getValidMoves(position, tile_positions, AntTag{});
-        case Insect::BEETLE:
-            return getValidMoves(position, tile_positions, BeetleTag{});
-        case Insect::GRASSHOPPER:
-            return getValidMoves(position, tile_positions, GrasshopperTag{});
-        case Insect::SPIDER:
-            return getValidMoves(position, tile_positions, SpiderTag{});
-        case Insect::QUEEN:
-            return getValidMoves(position, tile_positions, QueenTag{});
+        case Insect::ANT:         return getAntMoves(position, tile_positions);
+        case Insect::BEETLE:      return getBeetleMoves(position, tile_positions);
+        case Insect::GRASSHOPPER: return getGrasshopperMoves(position, tile_positions);
+        case Insect::SPIDER:      return getSpiderMoves(position, tile_positions);
+        case Insect::QUEEN:       return getQueenMoves(position, tile_positions);
     }
     
     // Should never reach here, but return empty vector for safety
@@ -157,47 +151,41 @@ bool wouldBreakHive(
 
 // ============= Move Calculations per Insect Type =============
 
-std::vector<Position> getValidMoves(
+std::vector<Position> getAntMoves(
     const Position& position,
-    const TilePositions& tile_positions,
-    AntTag tag
+    const TilePositions& tile_positions
 ) {
-    // TODO: Implement ant movement (unlimited distance around hive)
-    // Uses BFS to explore all reachable positions via sliding
+    // TODO: Implement ant movement (unlimited distance around hive via BFS)
     return {};
 }
 
-std::vector<Position> getValidMoves(
+std::vector<Position> getBeetleMoves(
     const Position& position,
-    const TilePositions& tile_positions,
-    BeetleTag tag
+    const TilePositions& tile_positions
 ) {
     // TODO: Implement beetle movement (one space, can climb)
     return {};
 }
 
-std::vector<Position> getValidMoves(
+std::vector<Position> getGrasshopperMoves(
     const Position& position,
-    const TilePositions& tile_positions,
-    GrasshopperTag tag
+    const TilePositions& tile_positions
 ) {
     // TODO: Implement grasshopper movement (jump in straight line)
     return {};
 }
 
-std::vector<Position> getValidMoves(
+std::vector<Position> getSpiderMoves(
     const Position& position,
-    const TilePositions& tile_positions,
-    SpiderTag tag
+    const TilePositions& tile_positions
 ) {
     // TODO: Implement spider movement (exactly 3 spaces)
     return {};
 }
 
-std::vector<Position> getValidMoves(
+std::vector<Position> getQueenMoves(
     const Position& position,
-    const TilePositions& tile_positions,
-    QueenTag tag
+    const TilePositions& tile_positions
 ) {
     // TODO: Implement queen movement (one space around hive)
     return {};
