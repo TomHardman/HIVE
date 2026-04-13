@@ -1,6 +1,4 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/HiveGame.dir/Controller.cpp.o"
-  "CMakeFiles/HiveGame.dir/Controller.cpp.o.d"
   "CMakeFiles/HiveGame.dir/Game.cpp.o"
   "CMakeFiles/HiveGame.dir/Game.cpp.o.d"
   "CMakeFiles/HiveGame.dir/MoveFetcher.cpp.o"

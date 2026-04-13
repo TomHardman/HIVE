@@ -1304,3 +1304,427 @@ events:
         - "/Network/Library/Frameworks"
         - "/System/Library/Frameworks"
 ...
+
+---
+events:
+  -
+    kind: "find_package-v1"
+    backtrace:
+      - "CMakeLists.txt:35 (find_package)"
+    name: "pybind11"
+    configs:
+      -
+        filename: "pybind11Config.cmake"
+        kind: "cmake"
+      -
+        filename: "pybind11-config.cmake"
+        kind: "cmake"
+    version_request:
+      exact: false
+    settings:
+      required: "required_explicit"
+      quiet: false
+      global: false
+      policy_scope: true
+      bypass_provider: false
+      names:
+        - "pybind11"
+      path_suffixes:
+        - ""
+      paths:
+        CMAKE_FIND_USE_CMAKE_PATH: true
+        CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+        CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+        CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+        CMAKE_FIND_USE_INSTALL_PREFIX: true
+        CMAKE_FIND_USE_PACKAGE_ROOT_PATH: true
+        CMAKE_FIND_USE_CMAKE_PACKAGE_REGISTRY: true
+        CMAKE_FIND_USE_SYSTEM_PACKAGE_REGISTRY: true
+        CMAKE_FIND_ROOT_PATH_MODE: "BOTH"
+    candidates:
+      -
+        path: "/Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build/CMakeFiles/pkgRedirects/pybind11Config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build/CMakeFiles/pkgRedirects/pybind11-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/Users/tomhardman/.opencode/pybind11Config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/Users/tomhardman/.opencode/pybind11-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/Users/tomhardman/.local/pybind11Config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/Users/tomhardman/.local/pybind11-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/opt/homebrew/opt/llvm/pybind11Config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/opt/homebrew/opt/llvm/pybind11-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/opt/homebrew/pybind11Config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/opt/homebrew/pybind11-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/usr/local/pybind11Config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/usr/local/pybind11-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/System/Cryptexes/App/usr/pybind11Config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/System/Cryptexes/App/usr/pybind11-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/usr/pybind11Config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/usr/pybind11-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/pybind11Config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/pybind11-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/opt/miniconda3/envs/HIVE/pybind11Config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/opt/miniconda3/envs/HIVE/pybind11-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/opt/miniconda3/condabin/pybind11Config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/opt/miniconda3/condabin/pybind11-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/Users/tomhardman/.vscode/extensions/ms-python.debugpy-2025.18.0-darwin-arm64/bundled/scripts/noConfigScripts/pybind11Config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/Users/tomhardman/.vscode/extensions/ms-python.debugpy-2025.18.0-darwin-arm64/bundled/scripts/noConfigScripts/pybind11-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/pybind11Config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/pybind11-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/opt/pybind11Config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/opt/pybind11-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/pybind11Config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/pybind11-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/Library/Developer/CommandLineTools/Library/Frameworks/pybind11Config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/Library/Developer/CommandLineTools/Library/Frameworks/pybind11-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/Library/Frameworks/pybind11Config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/Library/Frameworks/pybind11-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/System/Library/Frameworks/pybind11Config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/System/Library/Frameworks/pybind11-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/Users/tomhardman/Applications/pybind11Config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/Users/tomhardman/Applications/pybind11-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/Applications/pybind11Config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/Applications/pybind11-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+    found: null
+    search_context:
+      ENV{PATH}:
+        - "/Users/tomhardman/.opencode/bin"
+        - "/Users/tomhardman/.local/bin"
+        - "/opt/homebrew/opt/llvm/bin"
+        - "/opt/homebrew/bin"
+        - "/opt/homebrew/sbin"
+        - "/usr/local/bin"
+        - "/System/Cryptexes/App/usr/bin"
+        - "/usr/bin"
+        - "/bin"
+        - "/usr/sbin"
+        - "/sbin"
+        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin"
+        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin"
+        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
+        - "/Users/tomhardman/.local/bin"
+        - "/opt/homebrew/opt/llvm/bin"
+        - "/opt/miniconda3/envs/HIVE/bin"
+        - "/opt/miniconda3/condabin"
+        - "/Users/tomhardman/.vscode/extensions/ms-python.debugpy-2025.18.0-darwin-arm64/bundled/scripts/noConfigScripts"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr"
+        - "/opt/homebrew"
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/opt/homebrew"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+        - "/sw"
+        - "/opt/local"
+      CMAKE_SYSTEM_FRAMEWORK_PATH:
+        - "~/Library/Frameworks"
+        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Library/Frameworks"
+        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Network/Library/Frameworks"
+        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks"
+        - "/Library/Developer/CommandLineTools/Library/Frameworks"
+        - "/Library/Developer/CommandLineTools/Library/Frameworks"
+        - "/Library/Frameworks"
+        - "/Network/Library/Frameworks"
+        - "/System/Library/Frameworks"
+...
+
+---
+events:
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/opt/miniconda3/envs/HIVE/share/cmake/pybind11/FindPythonLibsNew.cmake:78 (find_program)"
+      - "/opt/miniconda3/envs/HIVE/share/cmake/pybind11/pybind11Tools.cmake:50 (find_package)"
+      - "/opt/miniconda3/envs/HIVE/share/cmake/pybind11/pybind11Common.cmake:228 (include)"
+      - "/opt/miniconda3/envs/HIVE/share/cmake/pybind11/pybind11Config.cmake:250 (include)"
+      - "CMakeLists.txt:35 (find_package)"
+    mode: "program"
+    variable: "PYTHON_EXECUTABLE"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "FIRST"
+      SearchAppBundle: "FIRST"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "python"
+    candidate_directories:
+      - "/opt/miniconda3/envs/HIVE/"
+      - "/opt/miniconda3/envs/HIVE/bin/"
+    searched_directories:
+      - "/opt/miniconda3/envs/HIVE/python"
+    found: "/opt/miniconda3/envs/HIVE/bin/python"
+    search_context:
+      ENV{PATH}:
+        - "/Users/tomhardman/.opencode/bin"
+        - "/Users/tomhardman/.local/bin"
+        - "/opt/homebrew/opt/llvm/bin"
+        - "/opt/homebrew/bin"
+        - "/opt/homebrew/sbin"
+        - "/usr/local/bin"
+        - "/System/Cryptexes/App/usr/bin"
+        - "/usr/bin"
+        - "/bin"
+        - "/usr/sbin"
+        - "/sbin"
+        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin"
+        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin"
+        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
+        - "/Users/tomhardman/.local/bin"
+        - "/opt/homebrew/opt/llvm/bin"
+        - "/opt/miniconda3/envs/HIVE/bin"
+        - "/opt/miniconda3/condabin"
+        - "/Users/tomhardman/.vscode/extensions/ms-python.debugpy-2025.18.0-darwin-arm64/bundled/scripts/noConfigScripts"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr"
+        - "/opt/homebrew"
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/opt/homebrew"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+        - "/sw"
+        - "/opt/local"
+      CMAKE_SYSTEM_APPBUNDLE_PATH:
+        - "/Users/tomhardman/Applications"
+        - "/Applications"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/opt/miniconda3/envs/HIVE/share/cmake/pybind11/FindPythonLibsNew.cmake:277 (find_library)"
+      - "/opt/miniconda3/envs/HIVE/share/cmake/pybind11/pybind11Tools.cmake:50 (find_package)"
+      - "/opt/miniconda3/envs/HIVE/share/cmake/pybind11/pybind11Common.cmake:228 (include)"
+      - "/opt/miniconda3/envs/HIVE/share/cmake/pybind11/pybind11Config.cmake:250 (include)"
+      - "CMakeLists.txt:35 (find_package)"
+    mode: "library"
+    variable: "PYTHON_LIBRARY"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "FIRST"
+      SearchAppBundle: "FIRST"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "python3.14"
+    candidate_directories:
+      - "/opt/miniconda3/envs/HIVE/lib/"
+    found: "/opt/miniconda3/envs/HIVE/lib/libpython3.14.dylib"
+    search_context:
+      ENV{PATH}:
+        - "/Users/tomhardman/.opencode/bin"
+        - "/Users/tomhardman/.local/bin"
+        - "/opt/homebrew/opt/llvm/bin"
+        - "/opt/homebrew/bin"
+        - "/opt/homebrew/sbin"
+        - "/usr/local/bin"
+        - "/System/Cryptexes/App/usr/bin"
+        - "/usr/bin"
+        - "/bin"
+        - "/usr/sbin"
+        - "/sbin"
+        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin"
+        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin"
+        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
+        - "/Users/tomhardman/.local/bin"
+        - "/opt/homebrew/opt/llvm/bin"
+        - "/opt/miniconda3/envs/HIVE/bin"
+        - "/opt/miniconda3/condabin"
+        - "/Users/tomhardman/.vscode/extensions/ms-python.debugpy-2025.18.0-darwin-arm64/bundled/scripts/noConfigScripts"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr"
+        - "/opt/homebrew"
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/opt/homebrew"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+        - "/sw"
+        - "/opt/local"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+      CMAKE_SYSTEM_FRAMEWORK_PATH:
+        - "~/Library/Frameworks"
+        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Library/Frameworks"
+        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Network/Library/Frameworks"
+        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks"
+        - "/Library/Developer/CommandLineTools/Library/Frameworks"
+        - "/Library/Developer/CommandLineTools/Library/Frameworks"
+        - "/Library/Frameworks"
+        - "/Network/Library/Frameworks"
+        - "/System/Library/Frameworks"
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/opt/homebrew/share/cmake/Modules/Internal/CheckSourceCompiles.cmake:104 (try_compile)"
+      - "/opt/homebrew/share/cmake/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
+      - "/opt/homebrew/share/cmake/Modules/CheckCXXCompilerFlag.cmake:103 (cmake_check_compiler_flag)"
+      - "/opt/miniconda3/envs/HIVE/share/cmake/pybind11/pybind11Common.cmake:323 (check_cxx_compiler_flag)"
+      - "/opt/miniconda3/envs/HIVE/share/cmake/pybind11/pybind11Common.cmake:363 (_pybind11_return_if_cxx_and_linker_flags_work)"
+      - "/opt/miniconda3/envs/HIVE/share/cmake/pybind11/pybind11Common.cmake:435 (_pybind11_generate_lto)"
+      - "/opt/miniconda3/envs/HIVE/share/cmake/pybind11/pybind11Config.cmake:250 (include)"
+      - "CMakeLists.txt:35 (find_package)"
+    checks:
+      - "Performing Test HAS_FLTO_THIN"
+    directories:
+      source: "/Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build/CMakeFiles/CMakeScratch/TryCompile-KEA9Bt"
+      binary: "/Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build/CMakeFiles/CMakeScratch/TryCompile-KEA9Bt"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: ""
+      CMAKE_CXX_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: ""
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: ""
+      CMAKE_OSX_SYSROOT: ""
+    buildResult:
+      variable: "HAS_FLTO_THIN"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build/CMakeFiles/CMakeScratch/TryCompile-KEA9Bt'
+        
+        Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_d0d0a/fast
+        /Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_d0d0a.dir/build.make CMakeFiles/cmTC_d0d0a.dir/build
+        Building CXX object CMakeFiles/cmTC_d0d0a.dir/src.cxx.o
+        /usr/bin/c++ -DHAS_FLTO_THIN  -std=gnu++20 -arch arm64   -flto -MD -MT CMakeFiles/cmTC_d0d0a.dir/src.cxx.o -MF CMakeFiles/cmTC_d0d0a.dir/src.cxx.o.d -o CMakeFiles/cmTC_d0d0a.dir/src.cxx.o -c /Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build/CMakeFiles/CMakeScratch/TryCompile-KEA9Bt/src.cxx
+        Linking CXX executable cmTC_d0d0a
+        /opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_d0d0a.dir/link.txt --verbose=1
+        /usr/bin/c++  -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/cmTC_d0d0a.dir/src.cxx.o -o cmTC_d0d0a  -flto
+        
+      exitCode: 0
+...

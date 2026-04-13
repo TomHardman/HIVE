@@ -225,8 +225,24 @@ HIVE_CPP_IS_TOP_LEVEL:STATIC=ON
 //Value Computed by CMake
 HIVE_CPP_SOURCE_DIR:STATIC=/Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp
 
+//Overwrite cached values read from Python library (classic search).
+// Turn off if cross-compiling and manually setting these values.
+PYBIND11_PYTHONLIBS_OVERWRITE:BOOL=ON
+
+//Python version to use for compiling modules
+PYBIND11_PYTHON_VERSION:STRING=
+
+//Path to a program.
+PYTHON_EXECUTABLE:FILEPATH=/opt/miniconda3/envs/HIVE/bin/python
+
+//Path to a library.
+PYTHON_LIBRARY:FILEPATH=/opt/miniconda3/envs/HIVE/lib/libpython3.14.dylib
+
 //The directory containing a CMake configuration file for fmt.
 fmt_DIR:PATH=/opt/homebrew/lib/cmake/fmt
+
+//The directory containing a CMake configuration file for pybind11.
+pybind11_DIR:PATH=/opt/miniconda3/envs/HIVE/share/cmake/pybind11
 
 
 ########################
@@ -360,4 +376,28 @@ CMAKE_TAPI-ADVANCED:INTERNAL=1
 CMAKE_UNAME:INTERNAL=/usr/bin/uname
 //ADVANCED property for variable: CMAKE_VERBOSE_MAKEFILE
 CMAKE_VERBOSE_MAKEFILE-ADVANCED:INTERNAL=1
+//Details about finding PYTHON
+FIND_PACKAGE_MESSAGE_DETAILS_PYTHON:INTERNAL=/opt/miniconda3/envs/HIVE/bin/python3.14.3
+//Details about finding PythonInterp
+FIND_PACKAGE_MESSAGE_DETAILS_PythonInterp:INTERNAL=[/opt/miniconda3/envs/HIVE/bin/python][v3.14.3(3.7)]
+//Test HAS_FLTO_THIN
+HAS_FLTO_THIN:INTERNAL=1
+//ADVANCED property for variable: PYTHON_EXECUTABLE
+PYTHON_EXECUTABLE-ADVANCED:INTERNAL=1
+PYTHON_INCLUDE_DIRS:INTERNAL=/opt/miniconda3/envs/HIVE/include/python3.14
+PYTHON_IS_DEBUG:INTERNAL=0
+PYTHON_LIBRARIES:INTERNAL=/opt/miniconda3/envs/HIVE/lib/libpython3.14.dylib
+//ADVANCED property for variable: PYTHON_LIBRARY
+PYTHON_LIBRARY-ADVANCED:INTERNAL=1
+PYTHON_MODULE_DEBUG_POSTFIX:INTERNAL=
+PYTHON_MODULE_EXTENSION:INTERNAL=.cpython-314-darwin.so
+PYTHON_MODULE_PREFIX:INTERNAL=
+PYTHON_VERSION:INTERNAL=3.14.3
+PYTHON_VERSION_MAJOR:INTERNAL=3
+PYTHON_VERSION_MINOR:INTERNAL=14
+Python_ADDITIONAL_VERSIONS:INTERNAL=3.12;3.11;3.10;3.9;3.8;3.7
+_PYBIND11_CROSSCOMPILING:INTERNAL=OFF
+_Python:INTERNAL=PYTHON
+//Directories where pybind11 and possibly Python headers are located
+pybind11_INCLUDE_DIRS:INTERNAL=/opt/miniconda3/envs/HIVE/include;/opt/miniconda3/envs/HIVE/include/python3.14
 

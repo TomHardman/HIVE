@@ -6,5 +6,7 @@ CXX_DEFINES = -DFMT_SHARED
 
 CXX_INCLUDES = -isystem /opt/homebrew/include
 
-CXX_FLAGS = -std=gnu++20
+CXX_FLAGSarm64 = -std=gnu++20 -arch arm64
+
+CXX_FLAGS = -std=gnu++20 -arch arm64
 

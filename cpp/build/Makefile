@@ -155,29 +155,18 @@ HiveExample/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/HiveExample.dir/build.make CMakeFiles/HiveExample.dir/build
 .PHONY : HiveExample/fast
 
-Controller.o: Controller.cpp.o
-.PHONY : Controller.o
+#=============================================================================
+# Target rules for targets named hive_engine
 
-# target to build an object file
-Controller.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/HiveGame.dir/build.make CMakeFiles/HiveGame.dir/Controller.cpp.o
-.PHONY : Controller.cpp.o
+# Build rule for target.
+hive_engine: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 hive_engine
+.PHONY : hive_engine
 
-Controller.i: Controller.cpp.i
-.PHONY : Controller.i
-
-# target to preprocess a source file
-Controller.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/HiveGame.dir/build.make CMakeFiles/HiveGame.dir/Controller.cpp.i
-.PHONY : Controller.cpp.i
-
-Controller.s: Controller.cpp.s
-.PHONY : Controller.s
-
-# target to generate assembly for a file
-Controller.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/HiveGame.dir/build.make CMakeFiles/HiveGame.dir/Controller.cpp.s
-.PHONY : Controller.cpp.s
+# fast build rule for target.
+hive_engine/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/hive_engine.dir/build.make CMakeFiles/hive_engine.dir/build
+.PHONY : hive_engine/fast
 
 Experimentation.o: Experimentation.cpp.o
 .PHONY : Experimentation.o
@@ -251,6 +240,30 @@ MoveFetcher.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/HiveGame.dir/build.make CMakeFiles/HiveGame.dir/MoveFetcher.cpp.s
 .PHONY : MoveFetcher.cpp.s
 
+bindings.o: bindings.cpp.o
+.PHONY : bindings.o
+
+# target to build an object file
+bindings.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/hive_engine.dir/build.make CMakeFiles/hive_engine.dir/bindings.cpp.o
+.PHONY : bindings.cpp.o
+
+bindings.i: bindings.cpp.i
+.PHONY : bindings.i
+
+# target to preprocess a source file
+bindings.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/hive_engine.dir/build.make CMakeFiles/hive_engine.dir/bindings.cpp.i
+.PHONY : bindings.cpp.i
+
+bindings.s: bindings.cpp.s
+.PHONY : bindings.s
+
+# target to generate assembly for a file
+bindings.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/hive_engine.dir/build.make CMakeFiles/hive_engine.dir/bindings.cpp.s
+.PHONY : bindings.cpp.s
+
 example.o: example.cpp.o
 .PHONY : example.o
 
@@ -286,9 +299,7 @@ help:
 	@echo "... Experimentation"
 	@echo "... HiveExample"
 	@echo "... HiveGame"
-	@echo "... Controller.o"
-	@echo "... Controller.i"
-	@echo "... Controller.s"
+	@echo "... hive_engine"
 	@echo "... Experimentation.o"
 	@echo "... Experimentation.i"
 	@echo "... Experimentation.s"
@@ -298,6 +309,9 @@ help:
 	@echo "... MoveFetcher.o"
 	@echo "... MoveFetcher.i"
 	@echo "... MoveFetcher.s"
+	@echo "... bindings.o"
+	@echo "... bindings.i"
+	@echo "... bindings.s"
 	@echo "... example.o"
 	@echo "... example.i"
 	@echo "... example.s"

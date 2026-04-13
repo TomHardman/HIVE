@@ -1,0 +1,1 @@
+/usr/bin/c++  -arch arm64 -bundle -Wl,-headerpad_max_install_names -Xlinker -undefined -Xlinker dynamic_lookup -flto -o /Users/tomhardman/Documents/Projects/HIVE/HIVE/py2/hive_engine.cpython-314-darwin.so CMakeFiles/hive_engine.dir/bindings.cpp.o  -Wl,-rpath,/opt/homebrew/lib libHiveGame.a /opt/homebrew/lib/libfmt.12.1.0.dylib

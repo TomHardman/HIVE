@@ -100,35 +100,19 @@ CMakeFiles/HiveGame.dir/MoveFetcher.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/HiveGame.dir/MoveFetcher.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/MoveFetcher.cpp -o CMakeFiles/HiveGame.dir/MoveFetcher.cpp.s
 
-CMakeFiles/HiveGame.dir/Controller.cpp.o: CMakeFiles/HiveGame.dir/flags.make
-CMakeFiles/HiveGame.dir/Controller.cpp.o: /Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/Controller.cpp
-CMakeFiles/HiveGame.dir/Controller.cpp.o: CMakeFiles/HiveGame.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/HiveGame.dir/Controller.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/HiveGame.dir/Controller.cpp.o -MF CMakeFiles/HiveGame.dir/Controller.cpp.o.d -o CMakeFiles/HiveGame.dir/Controller.cpp.o -c /Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/Controller.cpp
-
-CMakeFiles/HiveGame.dir/Controller.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/HiveGame.dir/Controller.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/Controller.cpp > CMakeFiles/HiveGame.dir/Controller.cpp.i
-
-CMakeFiles/HiveGame.dir/Controller.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/HiveGame.dir/Controller.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/Controller.cpp -o CMakeFiles/HiveGame.dir/Controller.cpp.s
-
 # Object files for target HiveGame
 HiveGame_OBJECTS = \
 "CMakeFiles/HiveGame.dir/Game.cpp.o" \
-"CMakeFiles/HiveGame.dir/MoveFetcher.cpp.o" \
-"CMakeFiles/HiveGame.dir/Controller.cpp.o"
+"CMakeFiles/HiveGame.dir/MoveFetcher.cpp.o"
 
 # External object files for target HiveGame
 HiveGame_EXTERNAL_OBJECTS =
 
 libHiveGame.a: CMakeFiles/HiveGame.dir/Game.cpp.o
 libHiveGame.a: CMakeFiles/HiveGame.dir/MoveFetcher.cpp.o
-libHiveGame.a: CMakeFiles/HiveGame.dir/Controller.cpp.o
 libHiveGame.a: CMakeFiles/HiveGame.dir/build.make
 libHiveGame.a: CMakeFiles/HiveGame.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking CXX static library libHiveGame.a"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Linking CXX static library libHiveGame.a"
 	$(CMAKE_COMMAND) -P CMakeFiles/HiveGame.dir/cmake_clean_target.cmake
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/HiveGame.dir/link.txt --verbose=$(VERBOSE)
 

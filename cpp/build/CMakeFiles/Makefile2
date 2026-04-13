@@ -66,12 +66,14 @@ CMAKE_BINARY_DIR = /Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build
 all: CMakeFiles/HiveGame.dir/all
 all: CMakeFiles/Experimentation.dir/all
 all: CMakeFiles/HiveExample.dir/all
+all: CMakeFiles/hive_engine.dir/all
 .PHONY : all
 
 # The main recursive "codegen" target.
 codegen: CMakeFiles/HiveGame.dir/codegen
 codegen: CMakeFiles/Experimentation.dir/codegen
 codegen: CMakeFiles/HiveExample.dir/codegen
+codegen: CMakeFiles/hive_engine.dir/codegen
 .PHONY : codegen
 
 # The main recursive "preinstall" target.
@@ -82,6 +84,7 @@ preinstall:
 clean: CMakeFiles/HiveGame.dir/clean
 clean: CMakeFiles/Experimentation.dir/clean
 clean: CMakeFiles/HiveExample.dir/clean
+clean: CMakeFiles/hive_engine.dir/clean
 .PHONY : clean
 
 #=============================================================================
@@ -91,12 +94,12 @@ clean: CMakeFiles/HiveExample.dir/clean
 CMakeFiles/HiveGame.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/HiveGame.dir/build.make CMakeFiles/HiveGame.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/HiveGame.dir/build.make CMakeFiles/HiveGame.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build/CMakeFiles --progress-num=5,6,7,8 "Built target HiveGame"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build/CMakeFiles --progress-num=5,6,7 "Built target HiveGame"
 .PHONY : CMakeFiles/HiveGame.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/HiveGame.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build/CMakeFiles 4
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build/CMakeFiles 3
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/HiveGame.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build/CMakeFiles 0
 .PHONY : CMakeFiles/HiveGame.dir/rule
@@ -108,7 +111,7 @@ HiveGame: CMakeFiles/HiveGame.dir/rule
 # codegen rule for target.
 CMakeFiles/HiveGame.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/HiveGame.dir/build.make CMakeFiles/HiveGame.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build/CMakeFiles --progress-num=5,6,7,8 "Finished codegen for target HiveGame"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build/CMakeFiles --progress-num=5,6,7 "Finished codegen for target HiveGame"
 .PHONY : CMakeFiles/HiveGame.dir/codegen
 
 # clean rule for target.
@@ -128,7 +131,7 @@ CMakeFiles/Experimentation.dir/all: CMakeFiles/HiveGame.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/Experimentation.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build/CMakeFiles 6
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build/CMakeFiles 5
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/Experimentation.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build/CMakeFiles 0
 .PHONY : CMakeFiles/Experimentation.dir/rule
@@ -160,7 +163,7 @@ CMakeFiles/HiveExample.dir/all: CMakeFiles/HiveGame.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/HiveExample.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build/CMakeFiles 6
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build/CMakeFiles 5
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/HiveExample.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build/CMakeFiles 0
 .PHONY : CMakeFiles/HiveExample.dir/rule
@@ -179,6 +182,38 @@ CMakeFiles/HiveExample.dir/codegen:
 CMakeFiles/HiveExample.dir/clean:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/HiveExample.dir/build.make CMakeFiles/HiveExample.dir/clean
 .PHONY : CMakeFiles/HiveExample.dir/clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/hive_engine.dir
+
+# All Build rule for target.
+CMakeFiles/hive_engine.dir/all: CMakeFiles/HiveGame.dir/all
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/hive_engine.dir/build.make CMakeFiles/hive_engine.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/hive_engine.dir/build.make CMakeFiles/hive_engine.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build/CMakeFiles --progress-num=8,9 "Built target hive_engine"
+.PHONY : CMakeFiles/hive_engine.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/hive_engine.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build/CMakeFiles 5
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/hive_engine.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build/CMakeFiles 0
+.PHONY : CMakeFiles/hive_engine.dir/rule
+
+# Convenience name for target.
+hive_engine: CMakeFiles/hive_engine.dir/rule
+.PHONY : hive_engine
+
+# codegen rule for target.
+CMakeFiles/hive_engine.dir/codegen:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/hive_engine.dir/build.make CMakeFiles/hive_engine.dir/codegen
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/tomhardman/Documents/Projects/HIVE/HIVE/cpp/build/CMakeFiles --progress-num=8,9 "Finished codegen for target hive_engine"
+.PHONY : CMakeFiles/hive_engine.dir/codegen
+
+# clean rule for target.
+CMakeFiles/hive_engine.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/hive_engine.dir/build.make CMakeFiles/hive_engine.dir/clean
+.PHONY : CMakeFiles/hive_engine.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.
