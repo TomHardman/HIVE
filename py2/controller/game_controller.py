@@ -48,8 +48,9 @@ class GameController:
         self.players = {1: player1, 2: player2}
 
         # Connect view signals
-        view.piece_selected.connect(self.on_piece_selected)
-        view.tile_clicked.connect(self.on_tile_clicked)
+        view.tray_clicked.connect(self.on_tray_clicked)
+        view.board_tile_clicked.connect(self.on_board_tile_clicked)
+        view.whitespace_clicked.connect(self.on_whitespace_clicked)
         view.placement_requested.connect(self.on_placement_requested)
         view.move_requested.connect(self.on_move_requested)
         view.ai_turn_requested.connect(self.on_ai_turn_requested)
@@ -63,23 +64,25 @@ class GameController:
 
     # ============= Signal handlers =============
 
-    def on_piece_selected(self, insect: str):
-        """User clicked a piece type in the selection tray."""
+    def on_tray_clicked(self, insect: str):
+        """User clicked a piece button in the selection canvas."""
         self._selected_tile_pos = None
         tile_idx = self._resolve_placement_tile_idx(insect)
-        if tile_idx is None:
-            return
         self._selected_piece_idx = tile_idx
-
         placements = self._get_valid_placements_for_idx(tile_idx)
         self.view.highlight_placements(placements, tile_idx, insect)
 
-    def on_tile_clicked(self, pos: tuple):
-        """User clicked an existing tile on the board."""
+    def on_whitespace_clicked(self):
+        """User clicked a blank area in either canvas — clear any active selection."""
+        self._selected_piece_idx = None
+        self._selected_tile_pos = None
+        self.view.clear_highlights()
+
+    def on_board_tile_clicked(self, pos: tuple):
+        """User clicked a tile on the board canvas. pos is the (q, r) hex coordinate."""
         self._selected_piece_idx = None
         self._selected_tile_pos = pos
 
-        # Resolve tile_idx from the stored board state
         tile_states = self._board_state.get(pos, [])
         tile_idx = tile_states[-1].tile_idx if tile_states else None
 

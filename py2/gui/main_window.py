@@ -2,6 +2,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt, pyqtSignal
 
 from .board_canvas import BoardCanvas
+from typing import Optional
 from .selection_canvas import SelectionCanvas
 
 
@@ -15,8 +16,9 @@ class HiveGUI(QtWidgets.QMainWindow):
     """
 
     # ── Signals forwarded from child canvases (controller connects here) ──
-    piece_selected      = pyqtSignal(str)           # insect name from tray click
-    tile_clicked        = pyqtSignal(tuple)          # (q, r) of board tile clicked
+    tray_clicked        = pyqtSignal(str)            # insect name clicked in tray
+    board_tile_clicked  = pyqtSignal(tuple)          # (q, r) of board tile clicked
+    whitespace_clicked  = pyqtSignal()               # blank area clicked in either canvas
     move_requested      = pyqtSignal(int, tuple)     # tile_idx, to_pos
     placement_requested = pyqtSignal(int, tuple)     # tile_idx, to_pos
     ai_turn_requested   = pyqtSignal()               # "Next Turn" button
@@ -48,8 +50,10 @@ class HiveGUI(QtWidgets.QMainWindow):
         toolbar.addAction(self._next_turn_btn)
 
         # ── Forward child signals ──
-        self.selection_canvas.piece_selected.connect(self.piece_selected)
-        self.board_canvas.tile_clicked.connect(self.tile_clicked)
+        self.selection_canvas.tray_clicked.connect(self.tray_clicked)
+        self.board_canvas.board_tile_clicked.connect(self.board_tile_clicked)
+        self.board_canvas.whitespace_clicked.connect(self.whitespace_clicked)
+        self.selection_canvas.whitespace_clicked.connect(self.whitespace_clicked)
         self.board_canvas.move_requested.connect(self.move_requested)
 
     # ── Controller-facing API ──
@@ -62,7 +66,7 @@ class HiveGUI(QtWidgets.QMainWindow):
         self.board_canvas.highlight_moves(positions, tile_idx)
 
     def highlight_placements(self, positions: list, tile_idx: int = None,
-                             insect: str = None):
+                             insect: Optional[str] = None):
         self.board_canvas.highlight_placements(positions, tile_idx, insect)
 
     def clear_highlights(self):

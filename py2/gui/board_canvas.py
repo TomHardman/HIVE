@@ -20,8 +20,9 @@ class BoardCanvas(QtOpenGL.QGLWidget):
     Emits signals for user actions; the controller handles them.
     """
 
-    tile_clicked = pyqtSignal(tuple)          # user clicked a placed tile: (q, r)
-    move_requested = pyqtSignal(int, tuple)   # tile_idx, to_pos
+    board_tile_clicked = pyqtSignal(tuple)     # user clicked a placed tile: (q, r)
+    move_requested     = pyqtSignal(int, tuple)   # tile_idx, to_pos
+    whitespace_clicked = pyqtSignal()          # user clicked an empty area
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -196,10 +197,12 @@ class BoardCanvas(QtOpenGL.QGLWidget):
                 cp = self.get_canvas_coords(pos)
                 mouse = (cp[0], self.height() - cp[1])
                 if math.sqrt((cx - mouse[0]) ** 2 + (cy - mouse[1]) ** 2) <= 50 * 0.9:
-                    self.tile_clicked.emit(pos)
+                    self.board_tile_clicked.emit(pos)
                     return
-
+            
             self.dragging = True
+
+        self.whitespace_clicked.emit()
 
     def mouseReleaseEvent(self, event):
         self.dragging = False

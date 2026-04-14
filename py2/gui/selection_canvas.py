@@ -20,7 +20,8 @@ class SelectionCanvas(QtOpenGL.QGLWidget):
     Emits signals for user actions; the controller handles them.
     """
 
-    piece_selected = pyqtSignal(str)   # insect name ('ant', 'queen', ...)
+    tray_clicked       = pyqtSignal(str)   # insect name if a piece was clicked
+    whitespace_clicked = pyqtSignal()     # user clicked a blank area
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -115,4 +116,6 @@ class SelectionCanvas(QtOpenGL.QGLWidget):
 
     def mousePressEvent(self, event):
         if button := self._button_at(event.x(), event.y()):
-            self.piece_selected.emit(button.insect)
+            self.tray_clicked.emit(button.insect)
+        else:
+            self.whitespace_clicked.emit()
