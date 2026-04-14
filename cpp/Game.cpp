@@ -233,11 +233,6 @@ int Game::tileToIdx(Insect insect, int id) {
     return -1;
 }
 
-bool Game::isValidPlacement(const Position& pos, int player) const {
-    // TODO: Implement placement validation
-    return true;
-}
-
 int Game::countSurroundingPieces(const Position& pos) const {
     int count = 0;
     for (const auto& neighbor : MoveFetcher::getNeighbors(pos)) {

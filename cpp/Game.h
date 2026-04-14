@@ -142,7 +142,6 @@ private:
     // ============= Private Helpers =============
 
     void initializeHands();
-    bool isValidPlacement(const Position& pos, int player) const;
     bool hasPlacedQueen(int player) const;
     int countSurroundingPieces(const Position& pos) const;
 
