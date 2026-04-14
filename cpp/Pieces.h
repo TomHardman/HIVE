@@ -53,10 +53,3 @@ namespace std {
     };
 }
 
-// Tag types for compile-time dispatch (zero-size types)
-// These enable overloading without storing type-specific data
-struct AntTag {};
-struct BeetleTag {};
-struct GrasshopperTag {};
-struct SpiderTag {};
-struct QueenTag {};

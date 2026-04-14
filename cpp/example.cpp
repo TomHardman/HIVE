@@ -1,5 +1,4 @@
 #include "Game.h"
-#include "Controller.h"
 #include <iostream>
 #include <fmt/format.h>
 
@@ -21,24 +20,17 @@ int main() {
     fmt::print("Player 1 hand size: {}\n", hands[0].size());
     fmt::print("Player 2 hand size: {}\n", hands[1].size());
     
-    // Example: Try to place a queen at origin
-    fmt::print("\nAttempting to place Player 1's Queen at (0, 0)...\n");
-    bool success = game.place(Insect::QUEEN, Position{0, 0});
-    fmt::print("Placement {}\n", success ? "succeeded" : "failed");
-    
-    if (success) {
-        fmt::print("Current player after placement: {}\n", game.getCurrentPlayer());
-        
-        const auto& queen_positions = game.getQueenPositions();
-        if (queen_positions[0].has_value()) {
-            auto pos = queen_positions[0].value();
-            fmt::print("Player 1 Queen position: ({}, {})\n", pos.q, pos.r);
-        }
+    // Example: Place Player 1's Queen at origin
+    fmt::print("\nPlacing Player 1's Queen at (0, 0)...\n");
+    Action queen_action{0, Position{0, 0}};  // tile_idx 0 = queen
+    game.apply_action(queen_action);
+    fmt::print("Current player after placement: {}\n", game.getCurrentPlayer());
+
+    const auto& queen_positions = game.getQueenPositions();
+    if (queen_positions[0].has_value()) {
+        auto pos = queen_positions[0].value();
+        fmt::print("Player 1 Queen position: ({}, {})\n", pos.q, pos.r);
     }
-    
-    // Create Controller (minimal for now)
-    Controller controller(game);
-    fmt::print("\nController created\n");
     
     // Display board state
     fmt::print("\nBoard state:\n");
@@ -64,11 +56,9 @@ int main() {
     }
     
     fmt::print("\n=== Architecture Features ===\n");
-    fmt::print("✓ MVC pattern: Model (Game), View (TileRenderer), Controller\n");
     fmt::print("✓ Pure data tiles: No position duplication\n");
     fmt::print("✓ Single source of truth: Position in Game only\n");
-    fmt::print("✓ Tag dispatch: Compile-time polymorphism\n");
-    fmt::print("✓ Namespace utilities: MoveFetcher, TileRenderer\n");
+    fmt::print("✓ Namespace utilities: MoveFetcher\n");
     
     return 0;
 }

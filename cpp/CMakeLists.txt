@@ -13,7 +13,6 @@ find_package(fmt REQUIRED)
 add_library(HiveGame
     Game.cpp
     MoveFetcher.cpp
-    Controller.cpp
 )
 
 target_link_libraries(HiveGame PRIVATE fmt::fmt)
@@ -31,3 +30,15 @@ add_executable(HiveExample
 )
 
 target_link_libraries(HiveExample PRIVATE fmt::fmt HiveGame)
+
+# ── pybind11 Python extension ─────────────────────────────────────────────
+find_package(pybind11 REQUIRED)
+
+pybind11_add_module(hive_engine bindings.cpp)
+target_link_libraries(hive_engine PRIVATE HiveGame fmt::fmt)
+
+# Output the .so directly into py2/ so `import hive_engine` works without
+# adding the build directory to PYTHONPATH.
+set_target_properties(hive_engine PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/../py2"
+)

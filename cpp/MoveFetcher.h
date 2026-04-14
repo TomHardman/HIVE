@@ -6,14 +6,11 @@
 #include <unordered_set>
 
 /**
- * MoveFetcher: Stateless class for computing valid moves
- * 
+ * MoveFetcher: Stateless namespace for computing valid moves per insect type.
+ *
  * DESIGN DECISION: Using a namespace instead of a class with static methods.
  * This is more idiomatic C++ for pure utility functions and makes it clear
  * there's no state to manage.
- * 
- * Uses tag dispatch pattern to select correct move algorithm at compile time
- * based on insect type.
  */
 namespace MoveFetcher {
     
@@ -100,56 +97,22 @@ namespace MoveFetcher {
         const TilePositions& tile_positions
     );
     
-    // ============= Move calculation per insect type (tag dispatch) =============
-    
-    /**
-     * Ant: Can move unlimited spaces around the hive perimeter
-     * Uses BFS to explore all reachable positions
-     */
-    std::vector<Position> getValidMoves(
-        const Position& position,
-        const TilePositions& tile_positions,
-        AntTag
-    );
-    
-    /**
-     * Beetle: Can move one space and climb on top of other pieces
-     * Special slide rules when on top of hive
-     */
-    std::vector<Position> getValidMoves(
-        const Position& position,
-        const TilePositions& tile_positions,
-        BeetleTag
-    );
-    
-    /**
-     * Grasshopper: Jumps in straight line over continuous pieces
-     * Lands on first empty space
-     */
-    std::vector<Position> getValidMoves(
-        const Position& position,
-        const TilePositions& tile_positions,
-        GrasshopperTag
-    );
-    
-    /**
-     * Spider: Must move exactly 3 spaces around hive perimeter
-     * Cannot backtrack
-     */
-    std::vector<Position> getValidMoves(
-        const Position& position,
-        const TilePositions& tile_positions,
-        SpiderTag
-    );
-    
-    /**
-     * Queen: Can move one space around hive perimeter
-     */
-    std::vector<Position> getValidMoves(
-        const Position& position,
-        const TilePositions& tile_positions,
-        QueenTag
-    );
+    // ============= Move calculation per insect type =============
+
+    /** Ant: Can move unlimited spaces around the hive perimeter via BFS */
+    std::vector<Position> getAntMoves(const Position& position, const TilePositions& tile_positions);
+
+    /** Beetle: Can move one space and climb on top of other pieces */
+    std::vector<Position> getBeetleMoves(const Position& position, const TilePositions& tile_positions);
+
+    /** Grasshopper: Jumps in a straight line over continuous pieces, lands on first empty space */
+    std::vector<Position> getGrasshopperMoves(const Position& position, const TilePositions& tile_positions);
+
+    /** Spider: Must move exactly 3 spaces around hive perimeter, cannot backtrack */
+    std::vector<Position> getSpiderMoves(const Position& position, const TilePositions& tile_positions);
+
+    /** Queen: Can move one space around hive perimeter */
+    std::vector<Position> getQueenMoves(const Position& position, const TilePositions& tile_positions);
     
 } // namespace MoveFetcher
 

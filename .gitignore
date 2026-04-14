@@ -1,2 +1,13 @@
 __pycache__/
 *.pt
+*.so
+
+# CMake                                                      
+build/        
+CMakeCache.txt
+CMakeFiles/                                                  
+cmake_install.cmake                                          
+compile_commands.json                                        
+CMakeScripts/                                                
+*.cmake                                                   
+!CMakeLists.txt
