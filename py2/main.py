@@ -15,8 +15,10 @@ Usage examples:
     python main.py --player2 random --simplified
 """
 
+import json
 import sys
 import argparse
+from pathlib import Path
 
 from PyQt5.QtWidgets import QApplication
 
@@ -24,8 +26,17 @@ import hive_engine
 
 from controller.game_controller import GameController
 from gui.main_window import HiveGUI
-from agents.base import Agent
-from agents.random_agent import RandomAgent
+from agents import Agent, RandomAgent, MinimaxAgentPy, MinimaxParams
+
+_CONFIG_PATH = Path(__file__).parent / 'config.json'
+
+
+def _load_minimax_agent() -> MinimaxAgentPy:
+    if _CONFIG_PATH.exists():
+        with _CONFIG_PATH.open() as f:
+            cfg = json.load(f)
+        return MinimaxAgentPy(params=MinimaxParams(**cfg.get('minimax', {})))
+    return MinimaxAgentPy(params=MinimaxParams())
 
 
 def _make_agent(name: str | None) -> Agent | None:
@@ -33,7 +44,9 @@ def _make_agent(name: str | None) -> Agent | None:
         return None
     if name == 'random':
         return RandomAgent()
-    raise ValueError(f"Unknown agent type: {name!r}. Valid: human, random")
+    if name == 'minimax_py':
+        return _load_minimax_agent()
+    raise ValueError(f"Unknown agent type: {name!r}. Valid: human, random, minimax")
 
 
 def main() -> None:
