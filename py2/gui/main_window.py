@@ -83,6 +83,9 @@ class HiveGUI(QtWidgets.QMainWindow):
         """remaining: insect → count for the current player."""
         self.selection_canvas.set_pieces_remaining(remaining)
 
+    def set_queen_forced(self, forced: bool):
+        self.selection_canvas.set_queen_forced(forced)
+
     def set_ai_turn_enabled(self, enabled: bool):
         self._next_turn_btn.setEnabled(enabled)
 

@@ -34,6 +34,7 @@ class SelectionCanvas(QtOpenGL.QGLWidget):
         # State set by controller
         self._player_turn: int = 1
         self._pieces_remaining: dict = {}   # insect → count for current player
+        self._queen_forced: bool = False    # True when player must place the queen this turn
 
         # ButtonPiece layout (rebuilt in resizeGL / first paint)
         self._buttons: list[ButtonPiece] = []
@@ -50,6 +51,11 @@ class SelectionCanvas(QtOpenGL.QGLWidget):
         """remaining: insect → count for the current player."""
         self._pieces_remaining = remaining
         self._buttons_dirty = True
+        self.update()
+
+    def set_queen_forced(self, forced: bool):
+        """When True, only the queen button is shown."""
+        self._queen_forced = forced
         self.update()
 
     # ============= OpenGL =============
@@ -74,6 +80,8 @@ class SelectionCanvas(QtOpenGL.QGLWidget):
             self._rebuild_buttons()
 
         for button in self._buttons:
+            if self._queen_forced and button.insect != 'queen':
+                continue
             count = self._pieces_remaining.get(button.insect, 0)
             if count > 0:
                 button.render()
@@ -102,6 +110,8 @@ class SelectionCanvas(QtOpenGL.QGLWidget):
     def _button_at(self, x, y) -> ButtonPiece | None:
         """Return the ButtonPiece under (x, y), or None."""
         for button in self._buttons:
+            if self._queen_forced and button.insect != 'queen':
+                continue
             count = self._pieces_remaining.get(button.insect, 0)
             if count > 0 and button.contains(x, y):
                 return button

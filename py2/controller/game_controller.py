@@ -137,6 +137,12 @@ class GameController:
         # Update Next Turn button: enabled iff current player is an AI
         self.view.set_ai_turn_enabled(self.players.get(player) is not None)
 
+        # Queen-must-be-placed rule: turn 3 (0-indexed) without queen → force queen only
+        turns = self.game.get_player_turns()
+        queen_positions = self.game.get_queen_positions()
+        queen_forced = (turns[player - 1] >= 2 and queen_positions[player - 1] is None)
+        self.view.set_queen_forced(queen_forced)
+
         if winner := self.game.check_game_over():
             self.view.show_game_over(winner)
 
