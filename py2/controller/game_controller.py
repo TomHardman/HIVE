@@ -1,3 +1,4 @@
+import time
 from dataclasses import dataclass
 
 import hive_engine
@@ -119,10 +120,13 @@ class GameController:
         agent = self.players.get(player)
         if agent is None:
             return
+        t0 = time.perf_counter()
         action = agent.select_action(self.game)
+        elapsed = time.perf_counter() - t0
         if action is None:
             return
         self.game.apply_action(_cpp_action(action.tile_idx, action.to))
+        self.view.add_turn_entry(player, elapsed)
         self._refresh_view()
 
     # ============= Internal helpers =============

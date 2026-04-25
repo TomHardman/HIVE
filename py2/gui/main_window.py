@@ -3,20 +3,21 @@ from PyQt5.QtCore import Qt, pyqtSignal
 
 from .board_canvas import BoardCanvas
 from .selection_canvas import SelectionCanvas
+from .side_panel import SidePanel
 
 from controller.game_controller import TileState
 
 
 class HiveGUI(QtWidgets.QMainWindow):
     """
-    Top-level window.  Owns BoardCanvas and SelectionCanvas, wires their
-    signals to the unified set exposed here, and provides the controller API.
+    Top-level window.  Owns BoardCanvas, SelectionCanvas, and SidePanel, wires
+    their signals to the unified set exposed here, and provides the controller API.
 
     The GameController connects to these signals and calls these methods —
-    it never touches BoardCanvas or SelectionCanvas directly.
+    it never touches child widgets directly.
     """
 
-    # ── Signals forwarded from child canvases (controller connects here) ──
+    # ── Signals forwarded from child widgets (controller connects here) ──
     tray_clicked        = pyqtSignal(str)            # insect name clicked in tray
     board_tile_clicked  = pyqtSignal(tuple)          # (q, r) of board tile clicked
     whitespace_clicked  = pyqtSignal()               # blank area clicked in either canvas
@@ -27,25 +28,27 @@ class HiveGUI(QtWidgets.QMainWindow):
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         self.setWindowTitle('HIVE')
-        self.resize(1000, 850)
+        self.resize(1200, 850)
 
         # ── Child widgets ──
         self.board_canvas = BoardCanvas(self)
         self.selection_canvas = SelectionCanvas(self)
+        self.side_panel = SidePanel(self)
 
-        splitter = QtWidgets.QSplitter(Qt.Vertical)
-        splitter.addWidget(self.board_canvas)
-        splitter.addWidget(self.selection_canvas)
-        splitter.setStretchFactor(0, 1)
-        splitter.setStretchFactor(1, 0)
-        self.setCentralWidget(splitter)
+        # Vertical splitter: board on top, selection tray below
+        game_splitter = QtWidgets.QSplitter(Qt.Vertical)
+        game_splitter.addWidget(self.board_canvas)
+        game_splitter.addWidget(self.selection_canvas)
+        game_splitter.setStretchFactor(0, 1)
+        game_splitter.setStretchFactor(1, 0)
 
-        # ── Toolbar ──
-        toolbar = self.addToolBar("Controls")
-        self._next_turn_btn = QtWidgets.QAction("Next Turn", self)
-        self._next_turn_btn.setEnabled(False)
-        self._next_turn_btn.triggered.connect(self.ai_turn_requested)
-        toolbar.addAction(self._next_turn_btn)
+        # Horizontal splitter: game area left, side panel right
+        main_splitter = QtWidgets.QSplitter(Qt.Horizontal)
+        main_splitter.addWidget(game_splitter)
+        main_splitter.addWidget(self.side_panel)
+        main_splitter.setStretchFactor(0, 1)
+        main_splitter.setStretchFactor(1, 0)
+        self.setCentralWidget(main_splitter)
 
         # ── Forward child signals ──
         self.selection_canvas.tray_clicked.connect(self.tray_clicked)
@@ -54,6 +57,7 @@ class HiveGUI(QtWidgets.QMainWindow):
         self.selection_canvas.whitespace_clicked.connect(self.whitespace_clicked)
         self.board_canvas.move_requested.connect(self.move_requested)
         self.board_canvas.placement_requested.connect(self.placement_requested)
+        self.side_panel.next_turn_clicked.connect(self.ai_turn_requested)
 
     # ── Controller-facing API ──
 
@@ -87,7 +91,10 @@ class HiveGUI(QtWidgets.QMainWindow):
         self.selection_canvas.set_queen_forced(forced)
 
     def set_ai_turn_enabled(self, enabled: bool) -> None:
-        self._next_turn_btn.setEnabled(enabled)
+        self.side_panel.set_next_turn_enabled(enabled)
+
+    def add_turn_entry(self, player: int, elapsed: float) -> None:
+        self.side_panel.add_turn_entry(player, elapsed)
 
     def show_game_over(self, winner: int) -> None:
         if winner == 0:
