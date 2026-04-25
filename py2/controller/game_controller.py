@@ -85,10 +85,12 @@ class GameController:
 
         tile_states = self._board_state.get(pos, [])
         tile_idx = tile_states[-1].tile_idx if tile_states else None
+        insect = tile_states[-1].insect if tile_states else None
+        player = tile_states[-1].player if tile_states else None
 
         moves = [(p.q, p.r) for p in self.game.get_valid_moves(_pos(pos))]
         if moves:
-            self.view.highlight_moves(moves, tile_idx)
+            self.view.highlight_moves(moves, tile_idx, insect, player, pos)
         else:
             self._selected_tile_pos = None
             self.view.clear_highlights()

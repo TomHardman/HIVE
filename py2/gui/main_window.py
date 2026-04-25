@@ -62,12 +62,14 @@ class HiveGUI(QtWidgets.QMainWindow):
         """board_state: (q,r) → list[TileState]"""
         self.board_canvas.set_board_state(board_state)
 
-    def highlight_moves(self, positions: list, tile_idx: int):
-        self.board_canvas.highlight_moves(positions, tile_idx)
+    def highlight_moves(self, positions: list, tile_idx: int, insect: str = None, player: int = None, source_pos: tuple = None):
+        self.board_canvas.highlight_moves(positions, tile_idx, insect, player, source_pos)
 
     def highlight_placements(self, positions: list, tile_idx: int = None,
                              insect: Optional[str] = None):
         self.board_canvas.highlight_placements(positions, tile_idx, insect)
+        if insect:
+            self.board_canvas.set_drag_piece(insect, self.board_canvas._player_turn)
 
     def clear_highlights(self):
         self.board_canvas.clear_highlights()

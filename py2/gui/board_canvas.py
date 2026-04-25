@@ -43,6 +43,8 @@ class BoardCanvas(QtOpenGL.QGLWidget):
         self._valid_placements: list = []     # list of (q,r) to highlight
         self._selected_tile_idx: int | None = None  # tile being moved
         self._placing_insect: str | None = None     # insect type being placed
+        self._drag_piece: tuple | None = None        # (insect, player) while a piece is held
+        self._drag_source_pos: tuple | None = None   # board (q,r) of tile being moved; None for tray placements
 
     # ============= Controller-facing API =============
 
@@ -58,10 +60,16 @@ class BoardCanvas(QtOpenGL.QGLWidget):
             ]
         self.update()
 
-    def highlight_moves(self, positions: list, tile_idx: int):
+    def set_drag_piece(self, insect: str, player: int, source_pos: tuple = None):
+        self._drag_piece = (insect, player)
+        self._drag_source_pos = source_pos
+
+    def highlight_moves(self, positions: list, tile_idx: int, insect: str = None, player: int = None, source_pos: tuple = None):
         self._valid_moves = positions
         self._selected_tile_idx = tile_idx
         self._valid_placements = []
+        if insect and player:
+            self.set_drag_piece(insect, player, source_pos)
         self.update()
 
     def highlight_placements(self, positions: list, tile_idx: int, insect: str):
@@ -76,6 +84,8 @@ class BoardCanvas(QtOpenGL.QGLWidget):
         self._valid_placements = []
         self._selected_tile_idx = None
         self._placing_insect = None
+        self._drag_piece = None
+        self._drag_source_pos = None
         self.update()
 
     # ============= OpenGL =============
@@ -100,10 +110,11 @@ class BoardCanvas(QtOpenGL.QGLWidget):
                         f"Mouse: ({self.mouse_x}, {self.mouse_y})",
                         QtGui.QFont("Arial", 12))
 
-        # Draw tiles
-        for pos, pieces in self._board_pieces.items():
+        # Draw tiles (hide top piece at drag source while a piece is being moved)
+        for pos, piece_stack in self._board_pieces.items():
             canvas_pos = self.get_canvas_coords(pos)
-            for piece in pieces:
+            tiles_to_draw = piece_stack[:-1] if (pos == self._drag_source_pos and piece_stack) else piece_stack
+            for piece in tiles_to_draw:
                 piece.render(canvas_pos[0] - self.pan_x, canvas_pos[1] + self.pan_y)
 
         # Draw valid move highlights
@@ -121,6 +132,13 @@ class BoardCanvas(QtOpenGL.QGLWidget):
             draw_hexagon((cp[0] - self.pan_x) * PX_SCALE,
                          (cp[1] + self.pan_y) * PX_SCALE,
                          99 * PX_SCALE, fill=False)
+
+        # Ghost piece following the mouse when a piece is held
+        if self._drag_piece and self.contains_mouse:
+            from .gui_pieces import ButtonPiece
+            insect, player = self._drag_piece
+            ghost = ButtonPiece(self.mouse_x, self.height() - self.mouse_y, 100, player, insect)
+            ghost.render()
 
         # Player turn indicator
         if hasattr(self, '_player_turn'):
