@@ -2,8 +2,9 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt, pyqtSignal
 
 from .board_canvas import BoardCanvas
-from typing import Optional
 from .selection_canvas import SelectionCanvas
+
+from controller.game_controller import TileState
 
 
 class HiveGUI(QtWidgets.QMainWindow):
@@ -23,7 +24,7 @@ class HiveGUI(QtWidgets.QMainWindow):
     placement_requested = pyqtSignal(int, tuple)     # tile_idx, to_pos
     ai_turn_requested   = pyqtSignal()               # "Next Turn" button
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         self.setWindowTitle('HIVE')
         self.resize(1000, 850)
@@ -31,9 +32,6 @@ class HiveGUI(QtWidgets.QMainWindow):
         # ── Child widgets ──
         self.board_canvas = BoardCanvas(self)
         self.selection_canvas = SelectionCanvas(self)
-
-        # Give board_canvas a reference so placement_requested can bubble up
-        self.board_canvas.parent = self
 
         splitter = QtWidgets.QSplitter(Qt.Vertical)
         splitter.addWidget(self.board_canvas)
@@ -55,35 +53,43 @@ class HiveGUI(QtWidgets.QMainWindow):
         self.board_canvas.whitespace_clicked.connect(self.whitespace_clicked)
         self.selection_canvas.whitespace_clicked.connect(self.whitespace_clicked)
         self.board_canvas.move_requested.connect(self.move_requested)
+        self.board_canvas.placement_requested.connect(self.placement_requested)
 
     # ── Controller-facing API ──
 
-    def set_board_state(self, board_state: dict):
+    def set_board_state(self, board_state: dict[tuple[int, int], list[TileState]]) -> None:
         """board_state: (q,r) → list[TileState]"""
         self.board_canvas.set_board_state(board_state)
 
-    def highlight_moves(self, positions: list, tile_idx: int):
-        self.board_canvas.highlight_moves(positions, tile_idx)
+    def highlight_moves(self, positions: list[tuple[int, int]], tile_idx: int,
+                        insect: str | None = None, player: int | None = None,
+                        source_pos: tuple[int, int] | None = None) -> None:
+        self.board_canvas.highlight_moves(positions, tile_idx, insect, player, source_pos)
 
-    def highlight_placements(self, positions: list, tile_idx: int = None,
-                             insect: Optional[str] = None):
+    def highlight_placements(self, positions: list[tuple[int, int]], tile_idx: int | None = None,
+                             insect: str | None = None) -> None:
         self.board_canvas.highlight_placements(positions, tile_idx, insect)
+        if insect:
+            self.board_canvas.set_drag_piece(insect, self.board_canvas._player_turn)
 
-    def clear_highlights(self):
+    def clear_highlights(self) -> None:
         self.board_canvas.clear_highlights()
 
-    def set_player_turn(self, player: int):
+    def set_player_turn(self, player: int) -> None:
         self.board_canvas._player_turn = player
         self.selection_canvas.set_player_turn(player)
 
-    def set_pieces_remaining(self, remaining: dict):
+    def set_pieces_remaining(self, remaining: dict[str, int]) -> None:
         """remaining: insect → count for the current player."""
         self.selection_canvas.set_pieces_remaining(remaining)
 
-    def set_ai_turn_enabled(self, enabled: bool):
+    def set_queen_forced(self, forced: bool) -> None:
+        self.selection_canvas.set_queen_forced(forced)
+
+    def set_ai_turn_enabled(self, enabled: bool) -> None:
         self._next_turn_btn.setEnabled(enabled)
 
-    def show_game_over(self, winner: int):
+    def show_game_over(self, winner: int) -> None:
         if winner == 0:
             msg = "Draw!"
         else:

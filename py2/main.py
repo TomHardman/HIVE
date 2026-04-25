@@ -24,10 +24,11 @@ import hive_engine
 
 from controller.game_controller import GameController
 from gui.main_window import HiveGUI
+from agents.base import Agent
 from agents.random_agent import RandomAgent
 
 
-def _make_agent(name: str):
+def _make_agent(name: str | None) -> Agent | None:
     if name is None or name == 'human':
         return None
     if name == 'random':
@@ -35,7 +36,7 @@ def _make_agent(name: str):
     raise ValueError(f"Unknown agent type: {name!r}. Valid: human, random")
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="HIVE board game")
     parser.add_argument('--player1', default='human', help='Player 1 agent (human|random)')
     parser.add_argument('--player2', default='human', help='Player 2 agent (human|random)')

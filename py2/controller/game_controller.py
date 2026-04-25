@@ -1,14 +1,15 @@
 from dataclasses import dataclass
-from typing import Optional
 
 import hive_engine
 
+from agents.base import Agent
+
 # Insect enum value → display string mapping.
 # Matches the C++ Insect enum order: ANT=0, BEETLE=1, GRASSHOPPER=2, SPIDER=3, QUEEN=4
-INSECT_NAMES = {0: 'ant', 1: 'beetle', 2: 'grasshopper', 3: 'spider', 4: 'queen'}
+INSECT_NAMES: dict[int, str] = {0: 'ant', 1: 'beetle', 2: 'grasshopper', 3: 'spider', 4: 'queen'}
 
 # tile_idx → insect name (matches C++ TILE_IDX_MAP)
-TILE_IDX_TO_INSECT = {
+TILE_IDX_TO_INSECT: dict[int, str] = {
     0: 'queen',
     1: 'spider', 2: 'spider',
     3: 'beetle', 4: 'beetle',
@@ -23,7 +24,7 @@ class TileState:
     player: int
     insect: str   # 'ant', 'beetle', 'grasshopper', 'spider', 'queen'
     tile_idx: int
-    position: tuple  # (q, r)
+    position: tuple[int, int]
 
 
 class GameController:
@@ -36,16 +37,17 @@ class GameController:
     - Push updated state to the view after each action
     """
 
-    def __init__(self, game, view, player1=None, player2=None):
+    def __init__(self, game: hive_engine.Game, view, player1: Agent | None = None,
+                 player2: Agent | None = None) -> None:
         """
         game    : hive_engine.Game instance
         view    : HiveGUI instance
         player1 : Agent | None (None = human)
         player2 : Agent | None (None = human)
         """
-        self.game = game
+        self.game: hive_engine.Game = game
         self.view = view
-        self.players = {1: player1, 2: player2}
+        self.players: dict[int, Agent | None] = {1: player1, 2: player2}
 
         # Connect view signals
         view.tray_clicked.connect(self.on_tray_clicked)
@@ -56,15 +58,15 @@ class GameController:
         view.ai_turn_requested.connect(self.on_ai_turn_requested)
 
         # Human interaction state
-        self._selected_piece_idx: Optional[int] = None   # tile_idx of piece being placed
-        self._selected_tile_pos: Optional[tuple] = None  # board pos of tile being moved
-        self._board_state: dict = {}   # (q,r) → list[TileState]; kept in sync by _refresh_view
+        self._selected_piece_idx: int | None = None
+        self._selected_tile_pos: tuple[int, int] | None = None
+        self._board_state: dict[tuple[int, int], list[TileState]] = {}
 
         self._refresh_view()
 
     # ============= Signal handlers =============
 
-    def on_tray_clicked(self, insect: str):
+    def on_tray_clicked(self, insect: str) -> None:
         """User clicked a piece button in the selection canvas."""
         self._selected_tile_pos = None
         tile_idx = self._resolve_placement_tile_idx(insect)
@@ -72,28 +74,30 @@ class GameController:
         placements = self._get_valid_placements_for_idx(tile_idx)
         self.view.highlight_placements(placements, tile_idx, insect)
 
-    def on_whitespace_clicked(self):
+    def on_whitespace_clicked(self) -> None:
         """User clicked a blank area in either canvas — clear any active selection."""
         self._selected_piece_idx = None
         self._selected_tile_pos = None
         self.view.clear_highlights()
 
-    def on_board_tile_clicked(self, pos: tuple):
+    def on_board_tile_clicked(self, pos: tuple[int, int]) -> None:
         """User clicked a tile on the board canvas. pos is the (q, r) hex coordinate."""
         self._selected_piece_idx = None
         self._selected_tile_pos = pos
 
         tile_states = self._board_state.get(pos, [])
         tile_idx = tile_states[-1].tile_idx if tile_states else None
+        insect = tile_states[-1].insect if tile_states else None
+        player = tile_states[-1].player if tile_states else None
 
         moves = [(p.q, p.r) for p in self.game.get_valid_moves(_pos(pos))]
         if moves:
-            self.view.highlight_moves(moves, tile_idx)
+            self.view.highlight_moves(moves, tile_idx, insect, player, pos)
         else:
             self._selected_tile_pos = None
             self.view.clear_highlights()
 
-    def on_placement_requested(self, tile_idx: int, pos: tuple):
+    def on_placement_requested(self, tile_idx: int, pos: tuple[int, int]) -> None:
         """User clicked a valid placement hex."""
         if tile_idx is None:
             return
@@ -101,7 +105,7 @@ class GameController:
         self._selected_piece_idx = None
         self._refresh_view()
 
-    def on_move_requested(self, tile_idx: int, to_pos: tuple):
+    def on_move_requested(self, tile_idx: int, to_pos: tuple[int, int]) -> None:
         """User clicked a valid move destination."""
         if tile_idx is None:
             return
@@ -109,7 +113,7 @@ class GameController:
         self._selected_tile_pos = None
         self._refresh_view()
 
-    def on_ai_turn_requested(self):
+    def on_ai_turn_requested(self) -> None:
         """User clicked Next Turn — execute one AI move."""
         player = self.game.get_current_player()
         agent = self.players.get(player)
@@ -123,7 +127,7 @@ class GameController:
 
     # ============= Internal helpers =============
 
-    def _refresh_view(self):
+    def _refresh_view(self) -> None:
         """Push current game state to the view and check for game over."""
         self.view.clear_highlights()
         self._board_state = self._build_board_state()
@@ -135,17 +139,23 @@ class GameController:
         # Update Next Turn button: enabled iff current player is an AI
         self.view.set_ai_turn_enabled(self.players.get(player) is not None)
 
+        # Queen-must-be-placed rule: turn 3 (0-indexed) without queen → force queen only
+        turns: list[int] = self.game.get_player_turns()
+        queen_positions = self.game.get_queen_positions()
+        queen_forced = (turns[player - 1] >= 2 and queen_positions[player - 1] is None)
+        self.view.set_queen_forced(queen_forced)
+
         if winner := self.game.check_game_over():
             self.view.show_game_over(winner)
 
-    def _build_board_state(self) -> dict:
+    def _build_board_state(self) -> dict[tuple[int, int], list[TileState]]:
         """
         Convert C++ tile_positions into a dict of (q,r) → list[TileState].
         Isolates the view from pybind11 objects.
         """
-        result = {}
+        result: dict[tuple[int, int], list[TileState]] = {}
         for pos, tiles in self.game.get_tile_positions().items():
-            coord = (pos.q, pos.r)
+            coord: tuple[int, int] = (pos.q, pos.r)
             result[coord] = []
             for tile in tiles:
                 insect_name = INSECT_NAMES.get(int(tile.insect), 'unknown')
@@ -158,16 +168,16 @@ class GameController:
                 ))
         return result
 
-    def _build_pieces_remaining(self, player: int) -> dict:
+    def _build_pieces_remaining(self, player: int) -> dict[str, int]:
         """Return insect → count for tiles still in the given player's hand."""
         hand = self.game.get_player_hands()[player - 1]
-        counts: dict = {}
+        counts: dict[str, int] = {}
         for tile in hand:
             name = INSECT_NAMES.get(int(tile.insect), 'unknown')
             counts[name] = counts.get(name, 0) + 1
         return counts
 
-    def _resolve_placement_tile_idx(self, insect: str) -> Optional[int]:
+    def _resolve_placement_tile_idx(self, insect: str) -> int | None:
         """Return the tile_idx for a placement of the given insect type."""
         player = self.game.get_current_player()
         hand = self.game.get_player_hands()[player - 1]
@@ -180,8 +190,8 @@ class GameController:
             return None
         return _tile_to_idx(insect_enum, max_id)
 
-    def _get_valid_placements_for_idx(self, tile_idx: int) -> list:
-        insect_str = TILE_IDX_TO_INSECT.get(tile_idx, '')
+    def _get_valid_placements_for_idx(self, tile_idx: int | None) -> list[tuple[int, int]]:
+        insect_str = TILE_IDX_TO_INSECT.get(tile_idx, '') if tile_idx is not None else ''
         insect_enum = _insect_name_to_enum(insect_str)
         positions = self.game.get_valid_placements(insect_enum)
         return [(p.q, p.r) for p in positions]
@@ -190,7 +200,7 @@ class GameController:
 # ============= Module-level helpers =============
 
 # TILE_IDX_MAP (mirrors C++ TILE_IDX_MAP)
-_TILE_IDX_MAP = [
+_TILE_IDX_MAP: list[tuple[int, int]] = [
     (4, 1),  # 0 = queen   (Insect::QUEEN=4)
     (3, 1),  # 1 = spider1 (Insect::SPIDER=3)
     (3, 2),  # 2 = spider2
@@ -204,14 +214,14 @@ _TILE_IDX_MAP = [
     (2, 3),  # 10 = gh3
 ]
 
-def _tile_to_idx(insect_enum, tile_id: int) -> int:
+def _tile_to_idx(insect_enum: hive_engine.Insect | int, tile_id: int) -> int:
     insect_int = int(insect_enum)   # works for both plain int and hive_engine.Insect
     for i, (ie, tid) in enumerate(_TILE_IDX_MAP):
         if ie == insect_int and tid == tile_id:
             return i
     return -1
 
-_INSECT_NAME_TO_ENUM = {
+_INSECT_NAME_TO_ENUM: dict[str, hive_engine.Insect] = {
     'ant':         hive_engine.Insect.ANT,
     'beetle':      hive_engine.Insect.BEETLE,
     'grasshopper': hive_engine.Insect.GRASSHOPPER,
@@ -222,8 +232,8 @@ _INSECT_NAME_TO_ENUM = {
 def _insect_name_to_enum(name: str) -> hive_engine.Insect:
     return _INSECT_NAME_TO_ENUM.get(name)
 
-def _pos(coord: tuple) -> hive_engine.Position:
+def _pos(coord: tuple[int, int]) -> hive_engine.Position:
     return hive_engine.Position(coord[0], coord[1])
 
-def _cpp_action(tile_idx: int, to: tuple) -> hive_engine.Action:
+def _cpp_action(tile_idx: int, to: tuple[int, int]) -> hive_engine.Action:
     return hive_engine.Action(tile_idx, hive_engine.Position(to[0], to[1]))
