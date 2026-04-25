@@ -26,17 +26,17 @@ import hive_engine
 
 from controller.game_controller import GameController
 from gui.main_window import HiveGUI
-from agents import Agent, RandomAgent, MinimaxAgent, MinimaxParams
+from agents import Agent, RandomAgent, MinimaxAgentPy, MinimaxParams
 
 _CONFIG_PATH = Path(__file__).parent / 'config.json'
 
 
-def _load_minimax_agent() -> MinimaxAgent:
+def _load_minimax_agent() -> MinimaxAgentPy:
     if _CONFIG_PATH.exists():
         with _CONFIG_PATH.open() as f:
             cfg = json.load(f)
-        return MinimaxAgent(params=MinimaxParams(**cfg.get('minimax', {})))
-    return MinimaxAgent(params=MinimaxParams())
+        return MinimaxAgentPy(params=MinimaxParams(**cfg.get('minimax', {})))
+    return MinimaxAgentPy(params=MinimaxParams())
 
 
 def _make_agent(name: str | None) -> Agent | None:
@@ -44,7 +44,7 @@ def _make_agent(name: str | None) -> Agent | None:
         return None
     if name == 'random':
         return RandomAgent()
-    if name == 'minimax':
+    if name == 'minimax_py':
         return _load_minimax_agent()
     raise ValueError(f"Unknown agent type: {name!r}. Valid: human, random, minimax")
 

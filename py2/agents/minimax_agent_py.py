@@ -163,7 +163,7 @@ def _beam_minimax(
         return best_val, best_action
 
 
-class MinimaxAgent(Agent):
+class MinimaxAgentPy(Agent):
     """
     Depth-limited beam-search minimax agent.
 
