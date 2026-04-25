@@ -55,6 +55,7 @@ class HiveGUI(QtWidgets.QMainWindow):
         self.board_canvas.whitespace_clicked.connect(self.whitespace_clicked)
         self.selection_canvas.whitespace_clicked.connect(self.whitespace_clicked)
         self.board_canvas.move_requested.connect(self.move_requested)
+        self.board_canvas.placement_requested.connect(self.placement_requested)
 
     # ── Controller-facing API ──
 
