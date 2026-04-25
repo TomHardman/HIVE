@@ -85,22 +85,49 @@ class RandomAgent(Agent):
 
 ### MinimaxAgent
 
-Passes the game handle directly into C++. The entire search runs inside C++ — beam evaluation, alpha-beta pruning, parallel branch exploration. From Python's perspective this is a single blocking call that returns an `Action`.
+Pure-Python beam-search minimax with alpha-beta pruning. Uses `game.apply_action` / `game.undo` for in-place tree traversal — no deep copy of game state.
 
 ```python
 class MinimaxAgent(Agent):
-    def __init__(self, depth: int, beam_width: int, params: hive_engine.HeuristicParams):
-        self.depth = depth
-        self.beam_width = beam_width
-        self.params = params
+    def __init__(self, depth: int, beam_width: int, params: MinimaxParams) -> None:
+        ...
 
-    def select_action(self, game):
-        return hive_engine.get_best_move(game, self.depth, self.beam_width, self.params)
+    def select_action(self, game: hive_engine.Game) -> Action | None:
+        player = game.get_current_player()
+        _, best = _beam_minimax(game, self.depth, True, player, self.params,
+                                -math.inf, math.inf, self.beam_width)
+        if best is None:
+            return None
+        return Action(tile_idx=best.tile_idx, to=(best.to.q, best.to.r))
 ```
 
-- `depth`: search depth (odd values preferred — finishes on the agent's own turn)
-- `beam_width`: number of candidates kept per level
-- `params`: `HeuristicParams(queen_surrounding_reward, ownership_reward, win_reward, mp_reward)`
+**`MinimaxParams`** — configurable heuristic weights (defaults match py arena):
+```python
+@dataclass
+class MinimaxParams:
+    queen_surrounding_reward: float = 1.0
+    ownership_reward: float = 3.0
+    win_reward: float = 100.0
+    mp_reward: float = 0.5
+```
+
+**Beam search** (two phases per node):
+1. Apply every legal action shallowly, score with the heuristic, undo. Keep top-`beam_width` candidates.
+2. Run full alpha-beta minimax only on those candidates.
+
+Reduces effective branching factor from ~20–40 moves down to `beam_width` per level.
+
+**Heuristic** (`_evaluate`) — four differential components (own advantage − opponent advantage):
+
+| Component | Implementation |
+|-----------|---------------|
+| Win/loss | ±`win_reward` from `check_game_over()` |
+| Queen surrounding | Count occupied hex neighbours of each queen |
+| Queen ownership | Opponent piece on top of own queen's stack |
+| Mobility | Distinct pieces (by insect+id) with ≥1 valid move |
+
+- `depth`: search depth (3 is the practical limit in pure Python)
+- `beam_width`: candidates retained per node (default 3)
 
 ### DQLAgent
 
@@ -133,21 +160,24 @@ class DQLAgent(Agent):
 
 ---
 
-## MVC Architecture
+## MVP Architecture
+
+This is a **Model-View-Presenter** pattern, not plain MVC. The key distinction: the View is fully passive — it never observes the Model directly and contains no game logic. All decisions about what to display flow through the Presenter (`GameController`), which queries the Model, formats the data (building `TileState` objects from pybind11 C++ types), and pushes the result to the View via an explicit API.
 
 ```
 ┌─────────────────────────────────────────┐
 │  View (Python/Qt)                       │
-│  BoardCanvas, SelectionCanvas           │
-│  — renders state, emits Qt signals      │
+│  HiveGUI, BoardCanvas, SelectionCanvas  │
+│  — passive renderer                     │
+│  — emits Qt signals for user input      │
+│  — exposes a push API (set_*, show_*)   │
 ├─────────────────────────────────────────┤
-│  Controller (Python)                    │
+│  Presenter (Python)                     │
 │  GameController                         │
-│  — connects signals to game actions     │
+│  — subscribes to view signals           │
+│  — queries Model, transforms data       │
+│  — pushes formatted state to the view   │
 │  — drives agent turns                   │
-│  — calls agent.select_action(game)      │
-│  — applies returned action via          │
-│    game.apply_action(action)            │
 ├─────────────────────────────────────────┤
 │  Model (C++ via pybind11)               │
 │  hive_engine.Game                       │
@@ -156,70 +186,98 @@ class DQLAgent(Agent):
 └─────────────────────────────────────────┘
 ```
 
-The view never touches the game object. The controller mediates everything.
+The View never holds a reference to the game object. The Presenter owns both and mediates all communication.
 
-### GameController
+### GameController (Presenter)
 
 ```python
 class GameController:
     def __init__(self, game: hive_engine.Game, view: HiveGUI,
-                 player1: Agent | None, player2: Agent | None):
+                 player1: Agent | None, player2: Agent | None) -> None:
         self.game = game
         self.view = view
         self.players = {1: player1, 2: player2}
 
+        view.tray_clicked.connect(self.on_tray_clicked)
+        view.board_tile_clicked.connect(self.on_board_tile_clicked)
+        view.whitespace_clicked.connect(self.on_whitespace_clicked)
         view.placement_requested.connect(self.on_placement_requested)
         view.move_requested.connect(self.on_move_requested)
-        view.piece_selected.connect(self.on_piece_selected)
         view.ai_turn_requested.connect(self.on_ai_turn_requested)
 
-    def on_ai_turn_requested(self):
+    def on_ai_turn_requested(self) -> None:
         player = self.game.get_current_player()
-        agent = self.players[player]
+        agent = self.players.get(player)
         if agent is None:
             return
         action = agent.select_action(self.game)
-        self.game.apply_action(action)
-        self.view.set_board_state(self.game.get_tile_positions())
+        if action is None:
+            return
+        self.game.apply_action(_cpp_action(action.tile_idx, action.to))
+        self._refresh_view()
+
+    def _refresh_view(self) -> None:
+        """Push current game state to the view and check for game over."""
+        self.view.clear_highlights()
+        self._board_state = self._build_board_state()   # C++ → TileState dicts
+        self.view.set_board_state(self._board_state)
+        player = self.game.get_current_player()
+        self.view.set_player_turn(player)
+        self.view.set_pieces_remaining(self._build_pieces_remaining(player))
+        self.view.set_ai_turn_enabled(self.players.get(player) is not None)
+        turns = self.game.get_player_turns()
+        queen_positions = self.game.get_queen_positions()
+        queen_forced = (turns[player - 1] >= 2 and queen_positions[player - 1] is None)
+        self.view.set_queen_forced(queen_forced)
         if winner := self.game.check_game_over():
             self.view.show_game_over(winner)
 ```
 
-**Human turn flow:**
-1. User clicks a piece in the tray → view emits `piece_selected(insect)`
-2. Controller calls `game.get_valid_placements(insect)`, tells view to highlight them
-3. User clicks a valid position → view emits `placement_requested(tile_idx, pos)`
-4. Controller calls `game.apply_action(Action(tile_idx, pos))`, refreshes view
+**Human placement flow:**
+1. User clicks a piece in the tray → view emits `tray_clicked(insect)`
+2. Presenter calls `game.get_valid_placements(insect)`, tells view to highlight them
+3. User clicks a valid hex → view emits `placement_requested(tile_idx, pos)`
+4. Presenter calls `game.apply_action(...)`, calls `_refresh_view()`
+
+**Human move flow:**
+1. User clicks a board tile → view emits `board_tile_clicked(pos)`
+2. Presenter calls `game.get_valid_moves(pos)`, tells view to highlight them
+3. User clicks a valid destination → view emits `move_requested(tile_idx, to_pos)`
+4. Presenter calls `game.apply_action(...)`, calls `_refresh_view()`
 
 **AI turn flow:**
 1. User clicks "Next Turn" → view emits `ai_turn_requested`
-2. Controller calls `agent.select_action(game)` to get an `Action`
-3. Controller calls `game.apply_action(action)`, refreshes view
+2. Presenter calls `agent.select_action(game)` to get an `Action`
+3. Presenter calls `game.apply_action(action)`, calls `_refresh_view()`
 
 ### GUI (View Layer)
 
-`BoardCanvas` and `SelectionCanvas` are Qt/OpenGL widgets. They render board state passed in by the controller and emit signals for user interactions — never calling game methods directly.
+`HiveGUI` is a `QMainWindow` that owns `BoardCanvas` and `SelectionCanvas` (Qt/OpenGL widgets). It forwards child signals up to the unified signal set that the Presenter connects to, and proxies the Presenter's push API down to the relevant child canvas. The View never calls game methods directly.
 
 **Signals emitted by the view:**
 
 | Signal | Trigger |
 |--------|---------|
-| `piece_selected(insect: str)` | User clicks a piece in the tray |
+| `tray_clicked(insect: str)` | User clicks a piece button in the selection tray |
+| `board_tile_clicked(pos: tuple)` | User clicks a placed tile on the board |
+| `whitespace_clicked()` | User clicks a blank area in either canvas |
 | `placement_requested(tile_idx: int, pos: tuple)` | User clicks a valid placement hex |
-| `tile_clicked(pos: tuple)` | User clicks a placed tile on the board |
 | `move_requested(tile_idx: int, to_pos: tuple)` | User clicks a valid move destination |
 | `ai_turn_requested()` | User clicks "Next Turn" button |
 
-**Methods called on the view by the controller:**
+**Methods called on the view by the presenter:**
 
 | Method | Purpose |
 |--------|---------|
-| `set_board_state(tile_positions)` | Re-render the board |
-| `highlight_placements(positions)` | Show valid placement hexes in green |
-| `highlight_moves(positions)` | Show valid move destinations in green |
-| `clear_highlights()` | Remove all green overlays |
+| `set_board_state(board_state)` | Re-render the board from `TileState` dicts |
+| `highlight_placements(positions, tile_idx, insect)` | Show valid placement hexes |
+| `highlight_moves(positions, tile_idx, insect, player, source_pos)` | Show valid move destinations |
+| `clear_highlights()` | Remove all overlays |
 | `set_player_turn(player)` | Update turn indicator |
-| `show_game_over(winner)` | Display result |
+| `set_pieces_remaining(remaining)` | Update the selection tray counts |
+| `set_queen_forced(forced)` | Restrict tray to queen-only when rule applies |
+| `set_ai_turn_enabled(enabled)` | Enable/disable "Next Turn" button |
+| `show_game_over(winner)` | Display result dialog |
 
 ---
 
