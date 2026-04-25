@@ -26,7 +26,7 @@ class PieceMixin:
 
         glPushMatrix()
         glTranslatef(0, 0, 1)
-        draw_insect(self.insect, rx, ry, self.width)
+        draw_insect(self.insect, rx, ry, self.width, self.player)
         glPopMatrix()
 
         glDisable(GL_DEPTH_TEST)
