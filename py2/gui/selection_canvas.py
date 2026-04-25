@@ -1,6 +1,6 @@
 import math
 
-from PyQt5 import QtGui
+from PyQt5 import QtGui, QtWidgets
 from PyQt5 import QtOpenGL
 from PyQt5.QtCore import pyqtSignal
 
@@ -10,7 +10,7 @@ from OpenGL import GLU
 from .gui_pieces import ButtonPiece
 from .px_scale import PX_SCALE
 
-_INSECTS = ['queen', 'ant', 'beetle', 'grasshopper', 'spider']
+_INSECTS: list[str] = ['queen', 'ant', 'beetle', 'grasshopper', 'spider']
 
 
 class SelectionCanvas(QtOpenGL.QGLWidget):
@@ -23,48 +23,48 @@ class SelectionCanvas(QtOpenGL.QGLWidget):
     tray_clicked       = pyqtSignal(str)   # insect name if a piece was clicked
     whitespace_clicked = pyqtSignal()     # user clicked a blank area
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         self.setFixedHeight(150)
         self.setMouseTracking(True)
 
-        self.mouse_x = 0
-        self.mouse_y = 0
+        self.mouse_x: int = 0
+        self.mouse_y: int = 0
 
         # State set by controller
         self._player_turn: int = 1
-        self._pieces_remaining: dict = {}   # insect → count for current player
+        self._pieces_remaining: dict[str, int] = {}
         self._queen_forced: bool = False    # True when player must place the queen this turn
 
         # ButtonPiece layout (rebuilt in resizeGL / first paint)
         self._buttons: list[ButtonPiece] = []
-        self._buttons_dirty = True
+        self._buttons_dirty: bool = True
 
     # ============= Controller-facing API =============
 
-    def set_player_turn(self, player: int):
+    def set_player_turn(self, player: int) -> None:
         self._player_turn = player
         self._buttons_dirty = True
         self.update()
 
-    def set_pieces_remaining(self, remaining: dict):
+    def set_pieces_remaining(self, remaining: dict[str, int]) -> None:
         """remaining: insect → count for the current player."""
         self._pieces_remaining = remaining
         self._buttons_dirty = True
         self.update()
 
-    def set_queen_forced(self, forced: bool):
+    def set_queen_forced(self, forced: bool) -> None:
         """When True, only the queen button is shown."""
         self._queen_forced = forced
         self.update()
 
     # ============= OpenGL =============
 
-    def initializeGL(self):
+    def initializeGL(self) -> None:
         self.qglClearColor(QtGui.QColor(255, 255, 255))
         gl.glEnable(gl.GL_DEPTH_TEST)
 
-    def resizeGL(self, width, height):
+    def resizeGL(self, width: int, height: int) -> None:
         gl.glViewport(0, 0, width, height)
         gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glLoadIdentity()
@@ -73,7 +73,7 @@ class SelectionCanvas(QtOpenGL.QGLWidget):
         gl.glLoadIdentity()
         self._buttons_dirty = True
 
-    def paintGL(self):
+    def paintGL(self) -> None:
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
         if self._buttons_dirty:
@@ -89,7 +89,7 @@ class SelectionCanvas(QtOpenGL.QGLWidget):
 
     # ============= Internal helpers =============
 
-    def _rebuild_buttons(self):
+    def _rebuild_buttons(self) -> None:
         n = len(_INSECTS)
         spacing = self.width() // (n + 1)
         y = self.height() // 2
@@ -107,7 +107,7 @@ class SelectionCanvas(QtOpenGL.QGLWidget):
         ]
         self._buttons_dirty = False
 
-    def _button_at(self, x, y) -> ButtonPiece | None:
+    def _button_at(self, x: int, y: int) -> ButtonPiece | None:
         """Return the ButtonPiece under (x, y), or None."""
         for button in self._buttons:
             if self._queen_forced and button.insect != 'queen':
@@ -119,12 +119,12 @@ class SelectionCanvas(QtOpenGL.QGLWidget):
 
     # ============= Mouse events =============
 
-    def mouseMoveEvent(self, event):
+    def mouseMoveEvent(self, event) -> None:
         self.mouse_x = event.x()
         self.mouse_y = event.y()
         self.update()
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event) -> None:
         if button := self._button_at(event.x(), event.y()):
             self.tray_clicked.emit(button.insect)
         else:

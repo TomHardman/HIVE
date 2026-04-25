@@ -1,11 +1,15 @@
+from typing import Callable
+
 from OpenGL.GL import *
 from OpenGL.GLUT import glutBitmapCharacter, GLUT_BITMAP_8_BY_13
 import math
 
 from .px_scale import PX_SCALE
 
+Color = tuple[float, float, float]
+
 # Per-insect fill colours matching the physical Hive pieces
-_INSECT_COL = {
+_INSECT_COL: dict[str, Color] = {
     'queen':       (0.95, 0.62, 0.08),   # amber
     'ant':         (0.18, 0.45, 0.88),   # blue
     'spider':      (0.58, 0.18, 0.06),   # dark red-brown
@@ -13,18 +17,18 @@ _INSECT_COL = {
     'beetle':      (0.55, 0.18, 0.72),   # purple
 }
 
-def _dark(col):
+def _dark(col: Color) -> Color:
     """Darkened shade of a colour for detail lines / contrast stripes."""
     return (col[0] * 0.30, col[1] * 0.30, col[2] * 0.30)
 
-def _light(col):
+def _light(col: Color) -> Color:
     """Lightened shade of a colour (e.g. for wings)."""
     return (min(1.0, col[0] + 0.52 * (1 - col[0])),
             min(1.0, col[1] + 0.52 * (1 - col[1])),
             min(1.0, col[2] + 0.52 * (1 - col[2])))
 
 
-def draw_hexagon(x0, y0, width, fill=True):
+def draw_hexagon(x0: float, y0: float, width: float, fill: bool = True) -> None:
     radius = width / 2
     if fill:
         glBegin(GL_POLYGON)
@@ -38,7 +42,7 @@ def draw_hexagon(x0, y0, width, fill=True):
     glLineWidth(1.0)
 
 
-def draw_ellipse(x0, y0, h_rad, v_rad, num_segments=48):
+def draw_ellipse(x0: float, y0: float, h_rad: float, v_rad: float, num_segments: int = 48) -> None:
     glBegin(GL_TRIANGLE_FAN)
     glVertex2f(x0, y0)
     for i in range(num_segments + 1):
@@ -47,7 +51,7 @@ def draw_ellipse(x0, y0, h_rad, v_rad, num_segments=48):
     glEnd()
 
 
-def draw_text(x, y, text):
+def draw_text(x: float, y: float, text: str) -> None:
     glRasterPos2f(x, y)
     for char in text:
         glutBitmapCharacter(GLUT_BITMAP_8_BY_13, ord(char))
@@ -60,7 +64,7 @@ def draw_text(x, y, text):
 # Insect colours match the physical Hive pieces regardless of player.
 
 
-def draw_ant(x0, y0, width, player=1):
+def draw_ant(x0: float, y0: float, width: float, player: int = 1) -> None:
     """
     Blue ant: three oval segments in a straight vertical line (abdomen bottom,
     thorax centre, head top), six legs from the thorax, two antennae with bulb tips.
@@ -92,7 +96,7 @@ def draw_ant(x0, y0, width, player=1):
     draw_ellipse(x0 + w*0.110, y0 + w*0.310, w*0.022, w*0.022)
 
 
-def draw_spider(x0, y0, width, player=1):
+def draw_spider(x0: float, y0: float, width: float, player: int = 1) -> None:
     """
     Dark-red spider: large round abdomen (top), smaller cephalothorax (bottom),
     eight jointed legs spreading symmetrically, two downward fangs.
@@ -133,7 +137,7 @@ def draw_spider(x0, y0, width, player=1):
     glLineWidth(1.0)
 
 
-def draw_grasshopper(x0, y0, width, player=1):
+def draw_grasshopper(x0: float, y0: float, width: float, player: int = 1) -> None:
     """
     Green grasshopper: tapered body polygon, small head, long antennae,
     two small front leg pairs, huge characteristic bent hind legs.
@@ -190,7 +194,7 @@ def draw_grasshopper(x0, y0, width, player=1):
     glLineWidth(1.0)
 
 
-def draw_beetle(x0, y0, width, player=1):
+def draw_beetle(x0: float, y0: float, width: float, player: int = 1) -> None:
     """
     Purple beetle: two rounded elytra, pronotum, head with mandibles,
     centre split, three leg pairs.
@@ -238,13 +242,13 @@ def draw_beetle(x0, y0, width, player=1):
     glLineWidth(1.0)
 
 
-def draw_queen(x0, y0, width, player=1):
+def draw_queen(x0: float, y0: float, width: float, player: int = 1) -> None:
     """
     Amber bee: two wide wings spread to the sides, striped abdomen,
     thorax, round head, three leg pairs, antennae with bulb tips.
     """
     col = _INSECT_COL['queen']
-    dk  = (0.08, 0.05, 0.01)          # near-black for dark stripes / legs
+    dk: Color  = (0.08, 0.05, 0.01)          # near-black for dark stripes / legs
     wing_col = _light(col)            # pale amber wings
     w   = width
 
@@ -262,7 +266,7 @@ def draw_queen(x0, y0, width, player=1):
         glEnd()
 
     # Striped abdomen — alternating amber / dark bands
-    stripe_cols = [col, dk, col, dk, col]
+    stripe_cols: list[Color] = [col, dk, col, dk, col]
     for i, sc in enumerate(stripe_cols):
         glColor3f(*sc)
         sy = y0 - w*0.265 + i * w*0.082
@@ -293,8 +297,8 @@ def draw_queen(x0, y0, width, player=1):
     draw_ellipse(x0 + w*0.118, y0 + w*0.370, w*0.018, w*0.018)
 
 
-def draw_insect(insect, x0, y0, width, player=1):
-    _MAP = {
+def draw_insect(insect: str, x0: float, y0: float, width: float, player: int = 1) -> None:
+    _MAP: dict[str, Callable[[float, float, float, int], None]] = {
         'ant':         draw_ant,
         'spider':      draw_spider,
         'grasshopper': draw_grasshopper,

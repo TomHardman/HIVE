@@ -1,11 +1,14 @@
 import random
+
+import hive_engine
+
 from .base import Agent, Action
 
 
 class RandomAgent(Agent):
     """Selects uniformly at random from legal actions."""
 
-    def select_action(self, game) -> Action:
+    def select_action(self, game: hive_engine.Game) -> Action | None:
         actions = game.get_legal_actions()
         if not actions:
             return None

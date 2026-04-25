@@ -1,12 +1,19 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from OpenGL.GL import *
 import math
 
 from .drawing import draw_hexagon, draw_insect
 from .px_scale import PX_SCALE
 
+if TYPE_CHECKING:
+    from controller.game_controller import TileState
+
 
 class PieceMixin:
-    def render(self, x=None, y=None):
+    def render(self, x: float | None = None, y: float | None = None) -> None:
         rx = (x * PX_SCALE) if x is not None else self.x
         ry = (y * PX_SCALE) if y is not None else self.y
 
@@ -31,7 +38,7 @@ class PieceMixin:
 
         glDisable(GL_DEPTH_TEST)
 
-    def contains(self, mouse_x, mouse_y):
+    def contains(self, mouse_x: float, mouse_y: float) -> bool:
         radius = self.width / (PX_SCALE * 2)
         distance = math.sqrt((mouse_x - self.x / PX_SCALE) ** 2 + (mouse_y - self.y / PX_SCALE) ** 2)
         return distance <= radius
@@ -40,7 +47,7 @@ class PieceMixin:
 class BoardPiece(PieceMixin):
     """Rendering helper for a tile that is on the board."""
 
-    def __init__(self, x, y, width, tile_state):
+    def __init__(self, x: float, y: float, width: float, tile_state: TileState) -> None:
         """
         tile_state : TileState from the controller
         """
@@ -56,14 +63,14 @@ class BoardPiece(PieceMixin):
 class ButtonPiece(PieceMixin):
     """Rendering helper for a piece-type button in the selection tray."""
 
-    def __init__(self, x, y, width, player, insect):
+    def __init__(self, x: float, y: float, width: float, player: int, insect: str) -> None:
         self.x = x * PX_SCALE
         self.y = y * PX_SCALE
         self.width = width * PX_SCALE
         self.player = player
         self.insect = insect
 
-    def render_n_remaining(self, n):
+    def render_n_remaining(self, n: int) -> None:
         from .drawing import draw_text
         glColor3f(0.0, 0.0, 0.0)
         draw_text(self.x - 3 * PX_SCALE, self.y - 60 * PX_SCALE, str(n))

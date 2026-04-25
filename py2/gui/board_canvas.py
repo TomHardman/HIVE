@@ -1,7 +1,9 @@
-import math
-from collections import defaultdict
+from __future__ import annotations
 
-from PyQt5 import QtGui
+import math
+from typing import TYPE_CHECKING
+
+from PyQt5 import QtGui, QtWidgets
 from PyQt5 import QtOpenGL
 from PyQt5.QtCore import pyqtSignal
 
@@ -9,8 +11,11 @@ import OpenGL.GL as gl
 from OpenGL import GLU
 
 from .drawing import draw_hexagon
-from .gui_pieces import BoardPiece
+from .gui_pieces import BoardPiece, ButtonPiece
 from .px_scale import PX_SCALE
+
+if TYPE_CHECKING:
+    from controller.game_controller import TileState
 
 
 class BoardCanvas(QtOpenGL.QGLWidget):
@@ -25,31 +30,31 @@ class BoardCanvas(QtOpenGL.QGLWidget):
     placement_requested = pyqtSignal(int, tuple)  # tile_idx, to_pos
     whitespace_clicked  = pyqtSignal()            # user clicked an empty area
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
-        self.parent = parent
         self.setMouseTracking(True)
 
-        self.mouse_x = 0
-        self.mouse_y = 0
-        self.contains_mouse = False
-        self.pan_x = 0
-        self.pan_y = 0
-        self.dragging = False
+        self.mouse_x: int = 0
+        self.mouse_y: int = 0
+        self.contains_mouse: bool = False
+        self.pan_x: int = 0
+        self.pan_y: int = 0
+        self.dragging: bool = False
+        self._player_turn: int = 1
 
         # Rendering state (set by controller via set_board_state / highlight_*)
-        self._board_state: dict = {}          # (q,r) → list[TileState]
-        self._board_pieces: dict = {}         # (q,r) → list[BoardPiece]
-        self._valid_moves: list = []          # list of (q,r) to highlight
-        self._valid_placements: list = []     # list of (q,r) to highlight
-        self._selected_tile_idx: int | None = None  # tile being moved
-        self._placing_insect: str | None = None     # insect type being placed
-        self._drag_piece: tuple | None = None        # (insect, player) while a piece is held
-        self._drag_source_pos: tuple | None = None   # board (q,r) of tile being moved; None for tray placements
+        self._board_state: dict[tuple[int, int], list[TileState]] = {}
+        self._board_pieces: dict[tuple[int, int], list[BoardPiece]] = {}
+        self._valid_moves: list[tuple[int, int]] = []
+        self._valid_placements: list[tuple[int, int]] = []
+        self._selected_tile_idx: int | None = None
+        self._placing_insect: str | None = None
+        self._drag_piece: tuple[str, int] | None = None
+        self._drag_source_pos: tuple[int, int] | None = None
 
     # ============= Controller-facing API =============
 
-    def set_board_state(self, board_state: dict):
+    def set_board_state(self, board_state: dict[tuple[int, int], list[TileState]]) -> None:
         """board_state: (q,r) → list[TileState]"""
         self._board_state = board_state
         self._board_pieces = {}
@@ -61,11 +66,13 @@ class BoardCanvas(QtOpenGL.QGLWidget):
             ]
         self.update()
 
-    def set_drag_piece(self, insect: str, player: int, source_pos: tuple = None):
+    def set_drag_piece(self, insect: str, player: int, source_pos: tuple[int, int] | None = None) -> None:
         self._drag_piece = (insect, player)
         self._drag_source_pos = source_pos
 
-    def highlight_moves(self, positions: list, tile_idx: int, insect: str = None, player: int = None, source_pos: tuple = None):
+    def highlight_moves(self, positions: list[tuple[int, int]], tile_idx: int,
+                        insect: str | None = None, player: int | None = None,
+                        source_pos: tuple[int, int] | None = None) -> None:
         self._valid_moves = positions
         self._selected_tile_idx = tile_idx
         self._valid_placements = []
@@ -73,14 +80,15 @@ class BoardCanvas(QtOpenGL.QGLWidget):
             self.set_drag_piece(insect, player, source_pos)
         self.update()
 
-    def highlight_placements(self, positions: list, tile_idx: int, insect: str):
+    def highlight_placements(self, positions: list[tuple[int, int]], tile_idx: int | None,
+                             insect: str | None) -> None:
         self._valid_placements = positions
         self._placing_insect = insect
         self._selected_tile_idx = tile_idx
         self._valid_moves = []
         self.update()
 
-    def clear_highlights(self):
+    def clear_highlights(self) -> None:
         self._valid_moves = []
         self._valid_placements = []
         self._selected_tile_idx = None
@@ -91,11 +99,11 @@ class BoardCanvas(QtOpenGL.QGLWidget):
 
     # ============= OpenGL =============
 
-    def initializeGL(self):
+    def initializeGL(self) -> None:
         self.qglClearColor(QtGui.QColor(255, 255, 255))
         gl.glEnable(gl.GL_DEPTH_TEST)
 
-    def resizeGL(self, width, height):
+    def resizeGL(self, width: int, height: int) -> None:
         gl.glViewport(0, 0, width, height)
         gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glLoadIdentity()
@@ -103,7 +111,7 @@ class BoardCanvas(QtOpenGL.QGLWidget):
         gl.glMatrixMode(gl.GL_MODELVIEW)
         gl.glLoadIdentity()
 
-    def paintGL(self):
+    def paintGL(self) -> None:
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
         gl.glColor3f(0.0, 0.0, 0.0)
@@ -136,21 +144,19 @@ class BoardCanvas(QtOpenGL.QGLWidget):
 
         # Ghost piece following the mouse when a piece is held
         if self._drag_piece and self.contains_mouse:
-            from .gui_pieces import ButtonPiece
             insect, player = self._drag_piece
             ghost = ButtonPiece(self.mouse_x, self.height() - self.mouse_y, 100, player, insect)
             ghost.render()
 
         # Player turn indicator
-        if hasattr(self, '_player_turn'):
-            gl.glColor3f(0.0, 0.0, 0.0)
-            self.renderText(10, 20,
-                            f"Player Turn: {self._player_turn}",
-                            QtGui.QFont("Arial", 12))
+        gl.glColor3f(0.0, 0.0, 0.0)
+        self.renderText(10, 20,
+                        f"Player Turn: {self._player_turn}",
+                        QtGui.QFont("Arial", 12))
 
     # ============= Coordinate mapping =============
 
-    def get_canvas_coords(self, board_pos: tuple) -> tuple:
+    def get_canvas_coords(self, board_pos: tuple[int, int]) -> tuple[float, float]:
         x0 = self.width() // 2
         y0 = self.height() // 2
         hex_width = 100
@@ -161,9 +167,9 @@ class BoardCanvas(QtOpenGL.QGLWidget):
         return (x0 + q * delta1[0] + r * delta2[0],
                 y0 + q * delta1[1] + r * delta2[1])
 
-    def _canvas_to_board(self, cx, cy) -> tuple | None:
+    def _canvas_to_board(self, cx: float, cy: float) -> tuple[int, int] | None:
         """Find the board hex closest to canvas point (cx, cy). Returns (q,r) or None."""
-        best_pos = None
+        best_pos: tuple[int, int] | None = None
         best_dist = float('inf')
         radius = 50
         for pos in list(self._board_state.keys()) + list(self._valid_moves) + list(self._valid_placements):
@@ -177,7 +183,7 @@ class BoardCanvas(QtOpenGL.QGLWidget):
 
     # ============= Mouse events =============
 
-    def mouseMoveEvent(self, event):
+    def mouseMoveEvent(self, event) -> None:
         if self.dragging:
             self.pan_x += self.mouse_x - event.x()
             self.pan_y += self.mouse_y - event.y()
@@ -186,7 +192,7 @@ class BoardCanvas(QtOpenGL.QGLWidget):
         self.contains_mouse = True
         self.update()
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event) -> None:
         cx = event.x() + self.pan_x
         cy = event.y() + self.pan_y
 
@@ -218,10 +224,10 @@ class BoardCanvas(QtOpenGL.QGLWidget):
                 if math.sqrt((cx - mouse[0]) ** 2 + (cy - mouse[1]) ** 2) <= 50 * 0.9:
                     self.board_tile_clicked.emit(pos)
                     return
-            
+
             self.dragging = True
 
         self.whitespace_clicked.emit()
 
-    def mouseReleaseEvent(self, event):
+    def mouseReleaseEvent(self, event) -> None:
         self.dragging = False

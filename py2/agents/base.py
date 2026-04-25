@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
+import hive_engine
+
 
 @dataclass
 class Action:
@@ -18,14 +20,14 @@ class Action:
     the engine — if the piece is in hand it is placed, if on the board it is moved.
     """
     tile_idx: int
-    to: tuple
+    to: tuple[int, int]
 
 
 class Agent(ABC):
     """Base class for all Hive agents."""
 
     @abstractmethod
-    def select_action(self, game) -> Action:
+    def select_action(self, game: hive_engine.Game) -> Action | None:
         """
         Return the chosen action without applying it to the game.
         The controller is responsible for calling game.apply_action(action).
