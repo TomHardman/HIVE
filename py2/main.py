@@ -31,11 +31,11 @@ from agents import Agent, RandomAgent, MinimaxAgentPy, MinimaxParams
 _CONFIG_PATH = Path(__file__).parent / 'config.json'
 
 
-def _load_minimax_agent() -> MinimaxAgentPy:
+def _load_minimax_py_agent() -> MinimaxAgentPy:
     if _CONFIG_PATH.exists():
         with _CONFIG_PATH.open() as f:
             cfg = json.load(f)
-        return MinimaxAgentPy(params=MinimaxParams(**cfg.get('minimax', {})))
+        return MinimaxAgentPy(params=MinimaxParams(**cfg.get('minimax_py', {})))
     return MinimaxAgentPy(params=MinimaxParams())
 
 
@@ -45,8 +45,8 @@ def _make_agent(name: str | None) -> Agent | None:
     if name == 'random':
         return RandomAgent()
     if name == 'minimax_py':
-        return _load_minimax_agent()
-    raise ValueError(f"Unknown agent type: {name!r}. Valid: human, random, minimax")
+        return _load_minimax_py_agent()
+    raise ValueError(f"Unknown agent type: {name!r}. Valid: human, random, minimax_py")
 
 
 def main() -> None:

@@ -1,6 +1,6 @@
 {
-    "minimax": {
-        "depth": 3,
+    "minimax_py": {
+        "depth": 5,
         "beam_width": 3,
         "queen_surrounding_reward": 1.0,
         "ownership_reward": 3.0,
