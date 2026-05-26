@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import heapq
 import math
-from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
+from minimax_utils import HEX_NEIGHBORS, MinimaxParams
 
 import hive_engine
 
@@ -11,19 +11,6 @@ from .base import Agent, Action
 
 if TYPE_CHECKING:
     pass
-
-
-_HEX_NEIGHBORS: list[tuple[int, int]] = [(0, 1), (1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1)]
-
-
-@dataclass
-class MinimaxParams:
-    depth: int = 3
-    beam_width: int = 3
-    queen_surrounding_reward: float = 1.0
-    ownership_reward: float = 3.0
-    win_reward: float = 100.0
-    mp_reward: float = 0.5
 
 
 def _evaluate(game: hive_engine.Game, player: int, params: MinimaxParams) -> float:
@@ -52,7 +39,7 @@ def _evaluate(game: hive_engine.Game, player: int, params: MinimaxParams) -> flo
         if queen_pos is None:
             return 0
         count = 0
-        for dq, dr in _HEX_NEIGHBORS:
+        for dq, dr in HEX_NEIGHBORS:
             neighbour = hive_engine.Position(queen_pos.q + dq, queen_pos.r + dr)
             if neighbour in tile_positions:
                 count += 1
