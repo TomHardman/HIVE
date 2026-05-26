@@ -3,7 +3,7 @@ from __future__ import annotations
 import heapq
 import math
 from typing import TYPE_CHECKING
-from minimax_utils import HEX_NEIGHBORS, MinimaxParams
+from .minimax_utils import HEX_NEIGHBORS, MinimaxParams
 
 import hive_engine
 
