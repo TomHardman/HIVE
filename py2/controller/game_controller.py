@@ -18,6 +18,30 @@ TILE_IDX_TO_INSECT: dict[int, str] = {
     8: 'grasshopper', 9: 'grasshopper', 10: 'grasshopper',
 }
 
+_INSECT_NAME_TO_ENUM: dict[str, hive_engine.Insect] = {
+    'ant':         hive_engine.Insect.ANT,
+    'beetle':      hive_engine.Insect.BEETLE,
+    'grasshopper': hive_engine.Insect.GRASSHOPPER,
+    'spider':      hive_engine.Insect.SPIDER,
+    'queen':       hive_engine.Insect.QUEEN,
+}
+
+# TILE_IDX_MAP (mirrors C++ TILE_IDX_MAP)
+_TILE_IDX_MAP: list[tuple[int, int]] = [
+    (4, 1),  # 0 = queen   (Insect::QUEEN=4)
+    (3, 1),  # 1 = spider1 (Insect::SPIDER=3)
+    (3, 2),  # 2 = spider2
+    (1, 1),  # 3 = beetle1 (Insect::BEETLE=1)
+    (1, 2),  # 4 = beetle2
+    (0, 1),  # 5 = ant1    (Insect::ANT=0)
+    (0, 2),  # 6 = ant2
+    (0, 3),  # 7 = ant3
+    (2, 1),  # 8 = gh1     (Insect::GRASSHOPPER=2)
+    (2, 2),  # 9 = gh2
+    (2, 3),  # 10 = gh3
+]
+
+
 
 @dataclass
 class TileState:
@@ -71,6 +95,8 @@ class GameController:
         """User clicked a piece button in the selection canvas."""
         self._selected_tile_pos = None
         tile_idx = self._resolve_placement_tile_idx(insect)
+        if tile_idx is None:
+            raise ValueError(f'Could not find valid tile to place for insect "{insect}"')
         self._selected_piece_idx = tile_idx
         placements = self._get_valid_placements_for_idx(tile_idx)
         self.view.highlight_placements(placements, tile_idx, insect)
@@ -162,7 +188,7 @@ class GameController:
             coord: tuple[int, int] = (pos.q, pos.r)
             result[coord] = []
             for tile in tiles:
-                insect_name = INSECT_NAMES.get(int(tile.insect), 'unknown')
+                insect_name = INSECT_NAMES[tile.insect]
                 tile_idx = _tile_to_idx(int(tile.insect), tile.id)
                 result[coord].append(TileState(
                     player=tile.player,
@@ -194,30 +220,14 @@ class GameController:
             return None
         return _tile_to_idx(insect_enum, max_id)
 
-    def _get_valid_placements_for_idx(self, tile_idx: int | None) -> list[tuple[int, int]]:
-        insect_str = TILE_IDX_TO_INSECT.get(tile_idx, '') if tile_idx is not None else ''
+    def _get_valid_placements_for_idx(self, tile_idx: int) -> list[tuple[int, int]]:
+        insect_str = TILE_IDX_TO_INSECT[tile_idx]
         insect_enum = _insect_name_to_enum(insect_str)
         positions = self.game.get_valid_placements(insect_enum)
         return [(p.q, p.r) for p in positions]
 
 
 # ============= Module-level helpers =============
-
-# TILE_IDX_MAP (mirrors C++ TILE_IDX_MAP)
-_TILE_IDX_MAP: list[tuple[int, int]] = [
-    (4, 1),  # 0 = queen   (Insect::QUEEN=4)
-    (3, 1),  # 1 = spider1 (Insect::SPIDER=3)
-    (3, 2),  # 2 = spider2
-    (1, 1),  # 3 = beetle1 (Insect::BEETLE=1)
-    (1, 2),  # 4 = beetle2
-    (0, 1),  # 5 = ant1    (Insect::ANT=0)
-    (0, 2),  # 6 = ant2
-    (0, 3),  # 7 = ant3
-    (2, 1),  # 8 = gh1     (Insect::GRASSHOPPER=2)
-    (2, 2),  # 9 = gh2
-    (2, 3),  # 10 = gh3
-]
-
 def _tile_to_idx(insect_enum: hive_engine.Insect | int, tile_id: int) -> int:
     insect_int = int(insect_enum)   # works for both plain int and hive_engine.Insect
     for i, (ie, tid) in enumerate(_TILE_IDX_MAP):
@@ -225,16 +235,11 @@ def _tile_to_idx(insect_enum: hive_engine.Insect | int, tile_id: int) -> int:
             return i
     return -1
 
-_INSECT_NAME_TO_ENUM: dict[str, hive_engine.Insect] = {
-    'ant':         hive_engine.Insect.ANT,
-    'beetle':      hive_engine.Insect.BEETLE,
-    'grasshopper': hive_engine.Insect.GRASSHOPPER,
-    'spider':      hive_engine.Insect.SPIDER,
-    'queen':       hive_engine.Insect.QUEEN,
-}
-
 def _insect_name_to_enum(name: str) -> hive_engine.Insect:
-    return _INSECT_NAME_TO_ENUM.get(name)
+    insect_name = _INSECT_NAME_TO_ENUM.get(name)
+    if insect_name is None:
+        raise ValueError(f'Insect type"{name}" does not exist')
+    return insect_name
 
 def _pos(coord: tuple[int, int]) -> hive_engine.Position:
     return hive_engine.Position(coord[0], coord[1])
