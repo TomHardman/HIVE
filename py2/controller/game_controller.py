@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import hive_engine
 
 from agents.base import Agent
+from gui import HiveGUI
 
 # Insect enum value → display string mapping.
 # Matches the C++ Insect enum order: ANT=0, BEETLE=1, GRASSHOPPER=2, SPIDER=3, QUEEN=4
@@ -71,7 +72,7 @@ class GameController:
         player2 : Agent | None (None = human)
         """
         self.game: hive_engine.Game = game
-        self.view = view
+        self.view: HiveGUI = view
         self.players: dict[int, Agent | None] = {1: player1, 2: player2}
 
         # Connect view signals
@@ -112,10 +113,10 @@ class GameController:
         self._selected_piece_idx = None
         self._selected_tile_pos = pos
 
-        tile_states = self._board_state.get(pos, [])
-        tile_idx = tile_states[-1].tile_idx if tile_states else None
-        insect = tile_states[-1].insect if tile_states else None
-        player = tile_states[-1].player if tile_states else None
+        tile_states = self._board_state[pos]
+        tile_idx = tile_states[-1].tile_idx
+        insect = tile_states[-1].insect
+        player = tile_states[-1].player
 
         moves = [(p.q, p.r) for p in self.game.get_valid_moves(_pos(pos))]
         if moves:
