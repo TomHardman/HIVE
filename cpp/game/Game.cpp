@@ -48,7 +48,7 @@ std::vector<Position> Game::getValidPlacements(Insect insect) const {
         std::unordered_set<Position> candidates;
         for (const auto& [pos, tiles] : tile_positions_) {
             for (const auto& neighbor : MoveFetcher::getNeighbors(pos)) {
-                if (tile_positions_.contains(neighbor)) {
+                if (!tile_positions_.contains(neighbor)) {
                     candidates.insert(neighbor);
                 }
             }
