@@ -67,7 +67,7 @@ This apply/undo pair is the mechanism minimax agents use for in-place tree trave
 | `getValidPlacements(insect)` | Positions where current player may place that insect |
 | `getValidMoves(position)` | Destinations for the top tile at a position |
 | `getLegalActions()` | All legal `Action`s for the current player |
-| `checkGameOver()` | `0` ongoing, `1` p1 wins, `2` p2 wins |
+| `checkGameOver()` | `-1` ongoing, `0` draw, `1` p1 wins, `2` p2 wins |
 | `getCurrentPlayer()` | `1` or `2` |
 | `getTilePositions()` | Read-only reference to board stacks |
 | `getPlayerHands()` | Read-only reference to both hands |
