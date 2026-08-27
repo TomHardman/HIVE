@@ -93,7 +93,7 @@ auto moves = game.getValidMoves(pos);  // Returns vector<Position>
 int current_player = game.getCurrentPlayer();  // 1 or 2
 const auto& board = game.getTilePositions();   // Read-only access
 const auto& hands = game.getPlayerHands();     // Read-only access
-int winner = game.checkGameOver();             // 0 = not over, 1/2 = winner
+int winner = game.checkGameOver();             // -1 = ongoing, 0 = draw, 1/2 = winner
 ```
 
 ## What's Implemented
