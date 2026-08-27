@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt, pyqtSignal
 
@@ -5,7 +9,8 @@ from .board_canvas import BoardCanvas
 from .selection_canvas import SelectionCanvas
 from .side_panel import SidePanel
 
-from controller.game_controller import TileState
+if TYPE_CHECKING:
+    from controller.game_controller import TileState
 
 
 class HiveGUI(QtWidgets.QMainWindow):

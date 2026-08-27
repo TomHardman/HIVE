@@ -190,7 +190,7 @@ class GameController:
             coord: tuple[int, int] = (pos.q, pos.r)
             result[coord] = []
             for tile in tiles:
-                insect_name = INSECT_NAMES[tile.insect]
+                insect_name = INSECT_NAMES[int(tile.insect)]
                 tile_idx = _tile_to_idx(int(tile.insect), tile.id)
                 result[coord].append(TileState(
                     player=tile.player,
