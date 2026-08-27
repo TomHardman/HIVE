@@ -78,7 +78,7 @@ PYBIND11_MODULE(hive_engine, m) {
         .def("get_legal_actions", &Game::getLegalActions,
              "Returns all legal actions for the current player.")
         .def("check_game_over", &Game::checkGameOver,
-             "Returns 0 (ongoing), 1 (player 1 wins), or 2 (player 2 wins).")
+             "Returns -1 (ongoing), 0 (draw), 1 (player 1 wins), or 2 (player 2 wins).")
         .def("get_current_player", &Game::getCurrentPlayer,
              "Returns the current player (1 or 2).")
 

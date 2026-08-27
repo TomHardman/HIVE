@@ -153,10 +153,10 @@ int Game::checkGameOver() const {
         int p2 = queen_positions_.at(1).has_value() ? countSurroundingPieces(*queen_positions_.at(1)) : 0;
         if (p1 < p2) {return 1;}
         if (p2 < p1) {return 2;}
-        return 0;
+        return 0;   // max turns reached, equal surrounding — draw
     }
 
-    return 0;
+    return -1;   // game still in progress
 }
 
 // ============= Game Actions =============

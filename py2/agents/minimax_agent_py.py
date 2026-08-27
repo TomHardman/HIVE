@@ -27,7 +27,7 @@ def _evaluate(game: hive_engine.Game, player: int, params: MinimaxParams) -> flo
     winner = game.check_game_over()
     if winner == player:
         return params.win_reward
-    if winner != 0:
+    if winner > 0:  # the other player won (draw=0 / ongoing=-1 fall through)
         return -params.win_reward
 
     tile_positions = game.get_tile_positions()
@@ -97,7 +97,7 @@ def _beam_minimax(
     Uses game.apply_action / game.undo for in-place tree traversal — no deep copy.
     """
     winner = game.check_game_over()
-    if winner != 0 or depth == 0:
+    if winner > 0 or depth == 0:
         return _evaluate(game, player, params), None
 
     legal = game.get_legal_actions()

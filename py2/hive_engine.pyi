@@ -93,7 +93,7 @@ class Game:
         ...
 
     def check_game_over(self) -> int:
-        """Returns 0 (ongoing), 1 (player 1 wins), or 2 (player 2 wins)."""
+        """Returns -1 (ongoing), 0 (draw), 1 (player 1 wins), or 2 (player 2 wins)."""
         ...
 
     def get_current_player(self) -> int:

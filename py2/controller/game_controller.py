@@ -176,7 +176,8 @@ class GameController:
         queen_forced = (turns[player - 1] >= 2 and queen_positions[player - 1] is None)
         self.view.set_queen_forced(queen_forced)
 
-        if winner := self.game.check_game_over():
+        # check_game_over(): -1 ongoing, 0 draw, 1/2 winner
+        if (winner := self.game.check_game_over()) != -1:
             self.view.show_game_over(winner)
 
     def _build_board_state(self) -> dict[tuple[int, int], list[TileState]]:
