@@ -87,7 +87,8 @@ public:
     std::vector<Action> getLegalActions() const;
 
     /**
-     * Returns 0 if game is ongoing, 1 if player 1 wins, 2 if player 2 wins.
+     * Returns -1 if the game is ongoing, 0 for a draw, 1 if player 1 wins,
+     * 2 if player 2 wins.
      */
     int checkGameOver() const;
 

@@ -39,31 +39,34 @@ std::vector<Position> Game::getValidPlacements(Insect insect) const {
     int player = getCurrentPlayer();
 
     // First move of the game: player 1 places at origin
-    if (player_turns_.at(0) == 0 && player_turns_.at(1) == 0)
+    if (player_turns_.at(0) == 0 && player_turns_.at(1) == 0) {
         return {Position{0, 0}};
+    }
 
     // Player's first move: any position adjacent to existing tiles
     if (player_turns_.at(player - 1) == 0) {
         std::unordered_set<Position> candidates;
         for (const auto& [pos, tiles] : tile_positions_) {
             for (const auto& neighbor : MoveFetcher::getNeighbors(pos)) {
-                if (tile_positions_.find(neighbor) == tile_positions_.end())
+                if (tile_positions_.contains(neighbor)) {
                     candidates.insert(neighbor);
+                }
             }
         }
         return std::vector<Position>(candidates.begin(), candidates.end());
     }
 
     // Must place queen by turn 3 (0-indexed turn 2)
-    if (player_turns_.at(player - 1) == 2 && !hasPlacedQueen(player) && insect != Insect::QUEEN)
+    if (player_turns_.at(player - 1) == 2 && !hasPlacedQueen(player) && insect != Insect::QUEEN) {
         return {};
+    }
 
     // Standard: adjacent to own pieces, not adjacent to any opponent piece
     std::unordered_set<Position> candidates;
     for (const auto& [pos, tiles] : tile_positions_) {
-        if (tiles.empty() || tiles.back().player != player) continue;
+        if (tiles.empty() || tiles.back().player != player) {continue;}
         for (const auto& neighbor : MoveFetcher::getNeighbors(pos)) {
-            if (tile_positions_.find(neighbor) != tile_positions_.end()) continue; // occupied
+            if (tile_positions_.contains(neighbor)) {continue;} // occupied
 
             bool adj_to_opponent = false;
             for (const auto& n2 : MoveFetcher::getNeighbors(neighbor)) {
@@ -75,7 +78,7 @@ std::vector<Position> Game::getValidPlacements(Insect insect) const {
                 }
             }
             if (!adj_to_opponent)
-                candidates.insert(neighbor);
+                {candidates.insert(neighbor);}
         }
     }
     return std::vector<Position>(candidates.begin(), candidates.end());
@@ -83,12 +86,12 @@ std::vector<Position> Game::getValidPlacements(Insect insect) const {
 
 std::vector<Position> Game::getValidMoves(const Position& position) const {
     auto it = tile_positions_.find(position);
-    if (it == tile_positions_.end() || it->second.empty()) return {};
+    if (it == tile_positions_.end() || it->second.empty()) {return{};}
 
     const HiveTile& tile = it->second.back();
-    if (tile.player != getCurrentPlayer()) return {};
-    if (!hasPlacedQueen(tile.player)) return {};
-    if (MoveFetcher::isCovered(position, tile, tile_positions_)) return {};
+    if (tile.player != getCurrentPlayer()) {return {};}
+    if (!hasPlacedQueen(tile.player)) {return {};}
+    if (MoveFetcher::isCovered(position, tile, tile_positions_)) {return {};}
 
     return MoveFetcher::getValidMoves(position, tile, tile_positions_);
 }
@@ -140,20 +143,20 @@ int Game::checkGameOver() const {
     bool p2_surrounded = queen_positions_.at(1).has_value()
         && countSurroundingPieces(*queen_positions_.at(1)) >= threshold;
 
-    if (p1_surrounded && p2_surrounded) return 0; // simultaneous — draw
-    if (p1_surrounded) return 2;
-    if (p2_surrounded) return 1;
+    if (p1_surrounded && p2_surrounded) {return 0;} // simultaneous — draw
+    if (p1_surrounded) {return 2;}
+    if (p2_surrounded) {return 1;}
 
     // Max turns reached: player with fewer pieces around their queen wins
     if (max_turns_ > 0 && player_turns_.at(0) + player_turns_.at(1) >= max_turns_ * 2) {
         int p1 = queen_positions_.at(0).has_value() ? countSurroundingPieces(*queen_positions_.at(0)) : 0;
         int p2 = queen_positions_.at(1).has_value() ? countSurroundingPieces(*queen_positions_.at(1)) : 0;
-        if (p1 < p2) return 1;
-        if (p2 < p1) return 2;
-        return 0;
+        if (p1 < p2) {return 1;}
+        if (p2 < p1) {return 2;}
+        return 0;   // max turns reached, equal surrounding — draw
     }
 
-    return 0;
+    return -1;   // game still in progress
 }
 
 // ============= Game Actions =============

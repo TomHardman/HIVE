@@ -36,14 +36,14 @@ class HiveGUI(QtWidgets.QMainWindow):
         self.side_panel = SidePanel(self)
 
         # Vertical splitter: board on top, selection tray below
-        game_splitter = QtWidgets.QSplitter(Qt.Vertical)
+        game_splitter = QtWidgets.QSplitter(Qt.Orientation.Vertical)
         game_splitter.addWidget(self.board_canvas)
         game_splitter.addWidget(self.selection_canvas)
         game_splitter.setStretchFactor(0, 1)
         game_splitter.setStretchFactor(1, 0)
 
         # Horizontal splitter: game area left, side panel right
-        main_splitter = QtWidgets.QSplitter(Qt.Horizontal)
+        main_splitter = QtWidgets.QSplitter(Qt.Orientation.Horizontal)
         main_splitter.addWidget(game_splitter)
         main_splitter.addWidget(self.side_panel)
         main_splitter.setStretchFactor(0, 1)

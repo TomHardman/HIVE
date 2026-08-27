@@ -28,11 +28,14 @@ class Position:
 # ---------------------------------------------------------------------------
 
 class Insect(IntEnum):
-    ANT: int
-    BEETLE: int
-    GRASSHOPPER: int
-    SPIDER: int
-    QUEEN: int
+    # Members must be *assigned* (not just annotated) so static analysis types
+    # `Insect.ANT` as `Insect` rather than a bare `int`. Values mirror the C++
+    # Insect enum order.
+    ANT = 0
+    BEETLE = 1
+    GRASSHOPPER = 2
+    SPIDER = 3
+    QUEEN = 4
 
 # ---------------------------------------------------------------------------
 # HiveTile
@@ -90,7 +93,7 @@ class Game:
         ...
 
     def check_game_over(self) -> int:
-        """Returns 0 (ongoing), 1 (player 1 wins), or 2 (player 2 wins)."""
+        """Returns -1 (ongoing), 0 (draw), 1 (player 1 wins), or 2 (player 2 wins)."""
         ...
 
     def get_current_player(self) -> int:
@@ -125,14 +128,23 @@ class Game:
         """
         ...
 
-    def get_player_hands(self) -> tuple[set[HiveTile], set[HiveTile]]:
-        """(player_1_hand, player_2_hand) — unplaced pieces per player."""
+    def get_player_hands(self) -> list[set[HiveTile]]:
+        """[player_1_hand, player_2_hand] — unplaced pieces per player.
+
+        A 2-element list (C++ std::array<..., 2> → Python list).
+        """
         ...
 
-    def get_queen_positions(self) -> tuple[Position | None, Position | None]:
-        """(p1_queen_pos, p2_queen_pos) — None if not yet placed."""
+    def get_queen_positions(self) -> list[Position | None]:
+        """[p1_queen_pos, p2_queen_pos] — None if not yet placed.
+
+        A 2-element list (C++ std::array<..., 2> → Python list).
+        """
         ...
 
-    def get_player_turns(self) -> tuple[int, int]:
-        """(p1_turns, p2_turns) — moves made by each player so far."""
+    def get_player_turns(self) -> list[int]:
+        """[p1_turns, p2_turns] — moves made by each player so far.
+
+        A 2-element list (C++ std::array<int, 2> → Python list).
+        """
         ...
