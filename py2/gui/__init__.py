@@ -1,1 +1,1 @@
-from main_window import HiveGUI
+from .main_window import HiveGUI
