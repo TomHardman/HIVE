@@ -9,5 +9,4 @@ find_package(fmt      REQUIRED)
 find_package(pybind11 REQUIRED)
 
 add_subdirectory(game)
-add_subdirectory(minimax)
 add_subdirectory(experimentation)
